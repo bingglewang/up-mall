@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zsl.upmall.mapper.OrderMasterDao">
+
+	<resultMap id="BaseResultMap" type="com.zsl.upmall.entity.OrderMaster">
+		<id column="id" property="id" />
+		<id column="system_order_no" property="systemOrderNo" />
+		<id column="transaction_order_no" property="transactionOrderNo" />
+		<id column="pay_way" property="payWay" />
+		<id column="member_id" property="memberId" />
+		<id column="address_id" property="addressId" />
+		<id column="shop_id" property="shopId" />
+		<id column="total_goods_amout" property="totalGoodsAmout" />
+		<id column="total_carriage" property="totalCarriage" />
+		<id column="practical_pay" property="practicalPay" />
+		<id column="hidden" property="hidden" />
+		<id column="remark" property="remark" />
+		<id column="tracking_company_id" property="trackingCompanyId" />
+		<id column="tracking_number" property="trackingNumber" />
+	</resultMap>
+	<sql id="Base_Column_List">
+		id, system_order_no, transaction_order_no, pay_way, member_id, address_id, shop_id, total_goods_amout, total_carriage, practical_pay, hidden, remark, tracking_company_id, tracking_number
+	</sql>
+
+	<resultMap id="OrderListResultMap" type="com.zsl.upmall.vo.out.order.OrderListVo">
+		<id column="orderId" property="orderId" />
+		<id column="orderSn" property="orderSn" />
+		<id column="orderStatus" property="orderStatus" />
+		<id column="totalAmount" property="totalAmount" />
+		<collection column="orderId" property="orderListProductList" select="getOrderListProductList"></collection>
+	</resultMap>
+
+
+	<select id="getOrderListByStatus" resultMap="OrderListResultMap">
+		SELECT
+			orderM.id orderId,
+			orderM.member_id userId,
+			orderM.system_order_no orderSn,
+			  orderM.practical_pay totalAmount,
+			  orderS.order_status orderStatus
+		FROM
+			order_master orderM
+		LEFT JOIN order_status orderS ON orderM.id = orderS.order_id
+		WHERE
+			orderM.member_id = #{userId}
+		<if test="orderStatus != -1 ">
+			and orderS.order_status = #{orderStatus}
+		</if>
+		ORDER BY
+			orderS.create_time DESC
+	</select>
+
+
+	<resultMap id="OrderListProductListMap" type="com.zsl.upmall.vo.out.product.OrderListProductVo">
+		<id column="productCount" property="productCount" />
+		<id column="productName" property="productName" />
+		<id column="productImg" property="productImg" />
+		<id column="productPrice" property="productPrice" />
+	</resultMap>
+
+	<select id="getOrderListProductList" resultMap="OrderListProductListMap">
+		SELECT
+			detailO.goods_count productCount,
+		    sk.sku_name productName,
+			sk.sku_picture productImg,
+			sk.retail_price productPrice
+		FROM
+			order_detail detailO
+		LEFT JOIN sku sk on sk.id = detailO.sku_id
+		where detailO.order_id = #{orderId}
+	</select>
+
+
+
+</mapper>

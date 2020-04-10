@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zsl.upmall.mapper.UserFriendDao">
+
+	<resultMap id="BaseResultMap" type="com.zsl.upmall.entity.UserFriend">
+		<id column="id" property="id" />
+		<id column="user_id" property="userId" />
+		<id column="friend_id" property="friendId" />
+		<id column="tree" property="tree" />
+		<id column="create_time" property="createTime" />
+	</resultMap>
+	<sql id="Base_Column_List">
+		id, user_id, friend_id, tree, create_time
+	</sql>
+	
+</mapper>

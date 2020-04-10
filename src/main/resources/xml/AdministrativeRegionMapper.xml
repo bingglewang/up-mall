@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zsl.upmall.mapper.AdministrativeRegionDao">
+
+	<resultMap id="BaseResultMap" type="com.zsl.upmall.entity.AdministrativeRegion">
+		<id column="id" property="id" />
+		<id column="country_code" property="countryCode" />
+		<id column="province_code" property="provinceCode" />
+		<id column="city_code" property="cityCode" />
+		<id column="area_code" property="areaCode" />
+		<id column="site_full_name" property="siteFullName" />
+		<id column="update_time" property="updateTime" />
+	</resultMap>
+	<sql id="Base_Column_List">
+		id, country_code, province_code, city_code, area_code, site_full_name, update_time
+	</sql>
+	
+</mapper>

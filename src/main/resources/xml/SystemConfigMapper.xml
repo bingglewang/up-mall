@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zsl.upmall.mapper.SystemConfigDao">
+
+	<resultMap id="BaseResultMap" type="com.zsl.upmall.entity.SystemConfig">
+		<id column="id" property="id" />
+		<id column="system_key" property="systemKey" />
+		<id column="system_item" property="systemItem" />
+		<id column="system_value" property="systemValue" />
+	</resultMap>
+	<sql id="Base_Column_List">
+		id, system_key, system_item, system_value
+	</sql>
+	
+</mapper>
