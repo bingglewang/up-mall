@@ -1,12 +1,12 @@
 /**
- * @filename:OrderStatusService 2020年04月08日
+ * @filename:SkuCustomService 2020年04月08日
  * @project up-mall板根商城  V1.0
  * Copyright(c) 2020 binggleWang Co. Ltd. 
  * All right reserved. 
  */
 package com.zsl.upmall.service;
 
-import com.zsl.upmall.entity.OrderStatus;
+import com.zsl.upmall.entity.SkuCustom;
 import com.baomidou.mybatisplus.extension.service.IService;
 /**   
  * @Description:TODO(服务层)
@@ -14,6 +14,6 @@ import com.baomidou.mybatisplus.extension.service.IService;
  * @author: binggleWang
  * 
  */
-public interface OrderStatusService extends IService<OrderStatus> {
+public interface SkuCustomService extends IService<SkuCustom> {
 	
 }

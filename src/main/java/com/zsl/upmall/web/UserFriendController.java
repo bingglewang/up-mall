@@ -6,12 +6,23 @@
  */
 package com.zsl.upmall.web;
 
-import com.zsl.upmall.aid.AbstractController;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.zsl.upmall.aid.JsonResult;
+import com.zsl.upmall.context.RequestContext;
+import com.zsl.upmall.context.RequestContextMgr;
 import com.zsl.upmall.entity.UserFriend;
+import com.zsl.upmall.entity.UserMember;
 import com.zsl.upmall.service.UserFriendService;
+import com.zsl.upmall.service.UserMemberService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-/**   
+
+import java.util.Date;
+
+/**
  * <p>自动生成工具：mybatis-dsc-generator</p>
  * 
  * <p>说明： 用户好友表API接口层</P>
@@ -22,6 +33,16 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/userFriend")
-public class UserFriendController extends AbstractController<UserFriendService,UserFriend>{
-	
+public class UserFriendController {
+
+    @Autowired
+    protected UserFriendService baseService;
+
+    @Autowired
+    private UserMemberService userMemberService;
+
+    protected JsonResult result = new JsonResult();
+
+
+
 }

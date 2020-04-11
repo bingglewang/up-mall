@@ -9,12 +9,15 @@ package com.zsl.upmall.web;
 import cn.binarywang.wx.miniapp.api.WxMaService;
 import cn.binarywang.wx.miniapp.bean.WxMaUserInfo;
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.zsl.upmall.aid.JsonResult;
+import com.zsl.upmall.config.SystemConfig;
 import com.zsl.upmall.context.RequestContext;
 import com.zsl.upmall.context.RequestContextMgr;
-import com.zsl.upmall.entity.UserMember;
+import com.zsl.upmall.entity.*;
 import com.zsl.upmall.exception.BusinessException;
-import com.zsl.upmall.service.UserMemberService;
+import com.zsl.upmall.service.*;
+import com.zsl.upmall.util.CountUtil;
 import com.zsl.upmall.vo.in.user.UpdateUser;
 import com.zsl.upmall.vo.in.user.UserBalacneIntegral;
 import com.zsl.upmall.vo.out.user.UserInfo;
@@ -24,6 +27,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import java.math.BigDecimal;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * <p>自动生成工具：mybatis-dsc-generator</p>
@@ -43,6 +52,18 @@ public class UserMemberController{
 
     @Autowired
     protected UserMemberService userMemberService;
+
+    @Autowired
+    private OrderMasterService orderMasterService;
+
+    @Autowired
+    private OrderDetailService orderDetailService;
+
+    @Autowired
+    private SkuService skuService;
+
+    @Autowired
+    private SkuCustomService skuCustomService;
 
     protected JsonResult result = new JsonResult();
 
@@ -155,14 +176,132 @@ public class UserMemberController{
         update.setId(userMember.getId());
         if(userBalacneIntegral.getBalance() != null){
             update.setBalance(userMember.getBalance() - userBalacneIntegral.getBalance());
+            if(update.getBalance() - 0 < 0){
+                update.setBalance(new Double(0));
+            }
             userMemberService.updateById(update);
         }
 
         if(userBalacneIntegral.getIntegral() != null){
             update.setIntegral(userMember.getIntegral() - userBalacneIntegral.getIntegral());
+            if(update.getIntegral() - 0 < 0){
+                update.setIntegral(0L);
+            }
             userMemberService.updateById(update);
         }
         return result.success("修改成功");
+    }
+
+
+    /**
+     * 用户升级(memberId, 等级标识)
+     * @param userId
+     * @param level 0 新人，1 铜牌，2 银牌，3金牌，4，事业伙伴，5经销商，6官方代理
+     * @return
+     */
+    @GetMapping("updateUserLevel")
+    public JsonResult updateUserLevel(Integer userId,Integer level) {
+        UserMember userMember = userMemberService.getById(userId);
+        if(userMember == null){
+            return result.error("用户不存在");
+        }
+        if(level == null || level < 0 || level > 6){
+            return  result.error("参数错误");
+        }
+        UserMember update = new UserMember();
+        update.setId(userMember.getId());
+        update.setUpdateTime(new Date());
+        update.setUserLevel(level);
+        if(!userMemberService.updateById(update)){
+            throw new RuntimeException("升级失败");
+        }
+        return result.success("升级成功");
+    }
+
+
+    /**
+     * 用户是否购买指定套餐（memberId, 套餐价）
+     * @param userId  用户id
+     * @param packagePrice 套餐价格
+     * @return
+     */
+    @GetMapping("isBuyPackage")
+    public JsonResult isBuyPackage(Integer userId,BigDecimal packagePrice) {
+        UserMember userMember = userMemberService.getById(userId);
+        if(userMember == null){
+            return result.error("用户不存在");
+        }
+        if(packagePrice == null){
+            return  result.error("参数错误");
+        }
+
+        QueryWrapper<OrderMaster> orderQuery = new QueryWrapper<>();
+        orderQuery.eq("member_id",userId).and(orItem -> orItem.eq("order_status",SystemConfig.ORDER_STATUS_RECIEVE).or().eq("order_status",SystemConfig.ORDER_STATUS_FINISH));
+        List<OrderMaster> orderMasters = orderMasterService.list(orderQuery);
+        if(orderMasters.isEmpty()){
+            // 没有购买
+            return result.success(false);
+        }
+
+        //根据价格获取套餐sku_id
+        List<SkuCustom> customList = skuCustomService.list();
+        customList.stream().filter(item -> {
+            Sku skuDetail = skuService.getById(item.getSkuId());
+            if(skuDetail.getRetailPrice().compareTo(packagePrice) == 0){
+                return true;
+            }else{
+                return false;
+            }
+        }).collect(Collectors.toList());
+
+        CountUtil countFlag = new CountUtil();
+        countFlag.setNum(0);
+        orderMasters.stream()
+                .forEach(order -> {
+                    //拿到订单详情 列表sku_id
+                    QueryWrapper<OrderDetail> detailQuery = new QueryWrapper<>();
+                    detailQuery.eq("order_id",order.getId());
+                    List<OrderDetail> detailList = orderDetailService.list(detailQuery);
+                    detailList.stream().forEach(orderdetailItem -> {
+                        customList.stream()
+                                .forEach(customItem -> {
+                                    if( orderdetailItem.getSkuId() - customItem.getSkuId() == 0){
+                                        countFlag.add();
+                                    }
+                                });
+                    });
+                });
+        if(countFlag.getNum() - 0 > 0){
+            //购买过
+            return result.success(true);
+        }else{
+            // 没有购买
+            return result.success(false);
+        }
+    }
+
+
+    /**
+     * 按用户id查询推荐人用户对象（memberId, 推荐人类型标识）返回当前用户和符合条件的推荐人用户
+     * @param userId 用户id
+     * @return
+     */
+    @GetMapping("getUserShareInfoById/{id}")
+    public JsonResult getUserShareInfoById(@PathVariable("id") Integer userId){
+        //当前用户信息
+        UserMember currentUser = userMemberService.getById(userId);
+        if(currentUser == null){
+            return result.error("用户不存在");
+        }
+        //会员推荐人信息
+        UserMember vipShareUser = userMemberService.getById(currentUser.getMemberRecommendedId());
+        //代理上推荐人信息
+        UserMember agentShareUser = userMemberService.getById(currentUser.getAgentRecommendedId());
+        Map<String,Object> mapInfo = new HashMap<>();
+        mapInfo.put("currentUser",currentUser);
+        mapInfo.put("vipShareUser",vipShareUser);
+        mapInfo.put("agentShareUser",agentShareUser);
+        return result.success(mapInfo);
     }
 
 }

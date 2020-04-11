@@ -1,14 +1,14 @@
 /**
- * @filename:OrderStatusServiceImpl 2020年04月08日
+ * @filename:SkuCustomServiceImpl 2020年04月08日
  * @project up-mall板根商城  V1.0
  * Copyright(c) 2018 binggleWang Co. Ltd. 
  * All right reserved. 
  */
 package com.zsl.upmall.service.impl;
 
-import com.zsl.upmall.entity.OrderStatus;
-import com.zsl.upmall.mapper.OrderStatusDao;
-import com.zsl.upmall.service.OrderStatusService;
+import com.zsl.upmall.entity.SkuCustom;
+import com.zsl.upmall.mapper.SkuCustomDao;
+import com.zsl.upmall.service.SkuCustomService;
 import org.springframework.stereotype.Service;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 
@@ -20,6 +20,6 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
  * 
  */
 @Service
-public class OrderStatusServiceImpl  extends ServiceImpl<OrderStatusDao, OrderStatus> implements OrderStatusService  {
+public class SkuCustomServiceImpl  extends ServiceImpl<SkuCustomDao, SkuCustom> implements SkuCustomService  {
 	
 }

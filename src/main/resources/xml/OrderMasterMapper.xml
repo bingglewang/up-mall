@@ -17,9 +17,15 @@
 		<id column="remark" property="remark" />
 		<id column="tracking_company_id" property="trackingCompanyId" />
 		<id column="tracking_number" property="trackingNumber" />
+		<id column="order_status" property="orderStatus" />
+		<id column="create_time" property="createTime" />
+		<id column="wait_pay_time" property="waitPayTime" />
+		<id column="wait_receive_time" property="waitReceiveTime" />
+		<id column="finished_time" property="finishedTime" />
+		<id column="cancel_time" property="cancelTime" />
 	</resultMap>
 	<sql id="Base_Column_List">
-		id, system_order_no, transaction_order_no, pay_way, member_id, address_id, shop_id, total_goods_amout, total_carriage, practical_pay, hidden, remark, tracking_company_id, tracking_number
+		id, system_order_no, transaction_order_no, pay_way, member_id, address_id, shop_id, total_goods_amout, total_carriage, practical_pay, hidden, remark, tracking_company_id, tracking_number, order_status, create_time, wait_pay_time, wait_receive_time, finished_time, cancel_time
 	</sql>
 
 	<resultMap id="OrderListResultMap" type="com.zsl.upmall.vo.out.order.OrderListVo">
@@ -36,18 +42,17 @@
 			orderM.id orderId,
 			orderM.member_id userId,
 			orderM.system_order_no orderSn,
-			  orderM.practical_pay totalAmount,
-			  orderS.order_status orderStatus
+			orderM.practical_pay totalAmount,
+		    orderM.order_status orderStatus
 		FROM
 			order_master orderM
-		LEFT JOIN order_status orderS ON orderM.id = orderS.order_id
 		WHERE
 			orderM.member_id = #{userId}
 		<if test="orderStatus != -1 ">
-			and orderS.order_status = #{orderStatus}
+			and orderM.order_status = #{orderStatus}
 		</if>
 		ORDER BY
-			orderS.create_time DESC
+		    orderM.create_time DESC
 	</select>
 
 

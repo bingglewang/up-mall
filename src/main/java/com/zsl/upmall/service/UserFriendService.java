@@ -8,12 +8,12 @@ package com.zsl.upmall.service;
 
 import com.zsl.upmall.entity.UserFriend;
 import com.baomidou.mybatisplus.extension.service.IService;
-/**   
+/**
  * @Description:TODO(用户好友表服务层)
  * @version: V1.0
  * @author: binggleWang
  * 
  */
 public interface UserFriendService extends IService<UserFriend> {
-	
+
 }

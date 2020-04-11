@@ -18,6 +18,9 @@ public class SystemConfig {
 
 
     public static String getStatusText(Integer status){
+        if(status == null){
+            return "";
+        }
         if(status - ORDER_STATUS_WAIT_PAY == 0){
             return "待付款";
         }else if(status - ORDER_STATUS_RECIEVE == 0){

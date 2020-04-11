@@ -21,5 +21,5 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
  */
 @Service
 public class UserFriendServiceImpl  extends ServiceImpl<UserFriendDao, UserFriend> implements UserFriendService  {
-	
+
 }

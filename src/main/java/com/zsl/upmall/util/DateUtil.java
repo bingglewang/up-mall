@@ -9,9 +9,10 @@ public class DateUtil {
     }
 
     public static String DateToString(Date date, String dateFormat) {
+        if(date == null){
+            return "";
+        }
         SimpleDateFormat sdf = new SimpleDateFormat(dateFormat);
         return sdf.format(date);
-
     }
-
 }

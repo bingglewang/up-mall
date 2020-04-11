@@ -4,15 +4,15 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.zsl.upmall.config.SystemConfig;
 import com.zsl.upmall.entity.OrderDetail;
 import com.zsl.upmall.entity.OrderMaster;
-import com.zsl.upmall.entity.OrderStatus;
 import com.zsl.upmall.entity.Sku;
 import com.zsl.upmall.service.OrderDetailService;
 import com.zsl.upmall.service.OrderMasterService;
-import com.zsl.upmall.service.OrderStatusService;
 import com.zsl.upmall.service.SkuService;
 import com.zsl.upmall.util.BeanUtil;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
+import java.util.Date;
 import java.util.List;
 
 public class OrderUnpaidTask extends Task {
@@ -34,7 +34,6 @@ public class OrderUnpaidTask extends Task {
         logger.info("系统开始处理延时任务---订单超时未付款---" + this.orderId);
 
         OrderMasterService orderService = BeanUtil.getBean(OrderMasterService.class);
-        OrderStatusService orderStatusService = BeanUtil.getBean(OrderStatusService.class);
         OrderDetailService orderDetailService = BeanUtil.getBean(OrderDetailService.class);
         SkuService skuService = BeanUtil.getBean(SkuService.class);
 
@@ -43,19 +42,18 @@ public class OrderUnpaidTask extends Task {
         if(order == null){
             return;
         }
+
         //判断订单状态是否为待付款
-        QueryWrapper<OrderStatus> orderStatusWarpper = new QueryWrapper();
-        orderStatusWarpper.eq("order_id",this.orderId);
-        OrderStatus orderStatus = orderStatusService.getOne(orderStatusWarpper);
-        if(orderStatus == null || (orderStatus.getOrderStatus() - SystemConfig.ORDER_STATUS_WAIT_PAY != 0)){
-            return;
+        if(order.getOrderStatus() - SystemConfig.ORDER_STATUS_WAIT_PAY != 0){
+            return ;
         }
 
         // 设置订单已取消状态
-        OrderStatus setOrderStatus = new OrderStatus();
-        setOrderStatus.setId(orderStatus.getId());
-        setOrderStatus.setOrderStatus(SystemConfig.ORDER_STATUS_CANCLE );
-        if (!orderStatusService.updateById(setOrderStatus)) {
+        OrderMaster upOrderCancel = new OrderMaster();
+        upOrderCancel.setId(order.getId());
+        upOrderCancel.setOrderStatus(SystemConfig.ORDER_STATUS_CANCLE );
+        upOrderCancel.setCancelTime(new Date());
+        if (!orderService.updateById(upOrderCancel)) {
             throw new RuntimeException("更新数据已失效");
         }
 

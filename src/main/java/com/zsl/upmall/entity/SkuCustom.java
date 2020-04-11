@@ -1,5 +1,5 @@
 /**
- * @filename:OrderStatus 2020年04月08日
+ * @filename:SkuCustom 2020年04月08日
  * @project up-mall板根商城  V1.0
  * Copyright(c) 2020 binggleWang Co. Ltd. 
  * All right reserved. 
@@ -27,24 +27,25 @@ import java.util.Date;
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
-public class OrderStatus extends Model<OrderStatus> {
+public class SkuCustom extends Model<SkuCustom> {
 
-	private static final long serialVersionUID = 1586348736830L;
+	private static final long serialVersionUID = 1586571750669L;
 	
 	@TableId(value = "id", type = IdType.AUTO)
-	 /** id主键 */
-	private Long id;
+	 /**  */
+	private Integer id;
     
-	 /** 订单号 */
-	private Long orderId;
+	 /**  */
+	private Integer skuId;
     
-	 /** 订单状态(0:待付款，1：待收货，2：已完成，3：已取消) */
-	private Integer orderStatus;
+	 /** 套餐类型（预留字段） */
+	private Integer comboType;
     
-	@DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-	@JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone = "GMT+8")
-	 /** 创建时间 */
-	private Date createTime;
+	 /** 套餐唯一标记 */
+	private String comboLevel;
+    
+	 /** 套餐说明 */
+	private String comboExplain;
     
 
 	@Override

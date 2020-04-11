@@ -17,66 +17,94 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
 
-/**   
+/**
  * @Description:TODO(实体类)
- * 
+ *
  * @version: V1.0
  * @author: binggleWang
- * 
+ *
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
 public class OrderMaster extends Model<OrderMaster> {
 
-	private static final long serialVersionUID = 1586348736692L;
-	
+	private static final long serialVersionUID = 1586571750011L;
+
 	@TableId(value = "id", type = IdType.AUTO)
-	 /** id主键 */
+	/** id主键 */
 	private Long id;
-    
-	 /** 系统订单号 */
+
+	/** 系统订单号 */
 	private String systemOrderNo;
-    
-	 /** 交易流水号 */
+
+	/** 交易流水号 */
 	private String transactionOrderNo;
-    
-	 /** 支付方式 */
+
+	/** 支付方式 */
 	private Integer payWay;
-    
-	 /** 用户id */
+
+	/** 用户id */
 	private Integer memberId;
-    
-	 /** 配送地址（用户如修改已下单的地址，原地址置为删除状态，再新增新地址） */
+
+	/** 配送地址（用户如修改已下单的地址，原地址置为删除状态，再新增新地址） */
 	private Integer addressId;
-    
-	 /** 商家id */
+
+	/** 商家id */
 	private Integer shopId;
-    
-	 /** 商品总金额 */
+
+	/** 商品总金额 */
 	private BigDecimal totalGoodsAmout;
-    
-	 /** 商品总运费 */
+
+	/** 商品总运费 */
 	private BigDecimal totalCarriage;
-    
-	 /** 实际支付金额 */
+
+	/** 实际支付金额 */
 	private BigDecimal practicalPay;
-    
-	 /** 是否删除（0否1是） */
+
+	/** 是否删除（0否1是） */
 	private Integer hidden;
-    
-	 /** 备注 */
+
+	/** 备注 */
 	private String remark;
-    
-	 /** 物流公司id */
+
+	/** 物流公司id */
 	private Integer trackingCompanyId;
-    
-	 /** 物流单号 */
+
+	/** 物流单号 */
 	private String trackingNumber;
-    
+
+	/** 订单状态（0待付款，1待收货，2已完成，3已取消） */
+	private Integer orderStatus;
+
+	@DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+	@JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone = "GMT+8")
+	/** 创建时间 */
+	private Date createTime;
+
+	@DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+	@JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone = "GMT+8")
+	/** 待支付时间 */
+	private Date waitPayTime;
+
+	@DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+	@JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone = "GMT+8")
+	/** 待收货时间 */
+	private Date waitReceiveTime;
+
+	@DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+	@JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone = "GMT+8")
+	/** 完成时间 */
+	private Date finishedTime;
+
+	@DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+	@JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone = "GMT+8")
+	/** 取消时间 */
+	private Date cancelTime;
+
 
 	@Override
-    protected Serializable pkVal() {
-        return this.id;
-    }
+	protected Serializable pkVal() {
+		return this.id;
+	}
 }

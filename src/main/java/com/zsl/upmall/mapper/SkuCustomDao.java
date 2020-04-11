@@ -1,5 +1,5 @@
 /**
- * @filename:OrderStatusDao 2020年04月08日
+ * @filename:SkuCustomDao 2020年04月08日
  * @project up-mall板根商城  V1.0
  * Copyright(c) 2020 binggleWang Co. Ltd. 
  * All right reserved. 
@@ -8,7 +8,7 @@ package com.zsl.upmall.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
-import com.zsl.upmall.entity.OrderStatus;
+import com.zsl.upmall.entity.SkuCustom;
 
 /**   
  * @Description:TODO(数据访问层)
@@ -18,6 +18,6 @@ import com.zsl.upmall.entity.OrderStatus;
  * 
  */
 @Mapper
-public interface OrderStatusDao extends BaseMapper<OrderStatus> {
+public interface SkuCustomDao extends BaseMapper<SkuCustom> {
 	
 }

@@ -58,9 +58,6 @@ public class OrderMasterController{
     private OrderDetailService orderDetailService;
 
     @Autowired
-    private OrderStatusService orderStatusService;
-
-    @Autowired
     private UserAddressService addressService;
 
     @Autowired
@@ -93,16 +90,12 @@ public class OrderMasterController{
         orderInfo.put("goodsAmount",orderMaster.getTotalGoodsAmout());
         orderInfo.put("actualPrice",orderMaster.getPracticalPay());
         orderInfo.put("freightPrice",orderMaster.getTotalCarriage());
-        //判断订单状态是否为待付款
-        QueryWrapper<OrderStatus> orderStatusWarpper = new QueryWrapper();
-        orderStatusWarpper.eq("order_id",id);
-        OrderStatus orderStatus = orderStatusService.getOne(orderStatusWarpper);
-        if(orderStatus == null){
-            return result.error("订单状态不对");
-        }
-        orderInfo.put("status",orderStatus.getOrderStatus());
-        orderInfo.put("statusText",SystemConfig.getStatusText(orderStatus.getOrderStatus()));
-        orderInfo.put("submitTime",DateUtil.DateToString( orderStatus.getCreateTime(),"yyyy-MM-dd HH:mm:ss"));
+        orderInfo.put("status",orderMaster.getOrderStatus());
+        orderInfo.put("statusText",SystemConfig.getStatusText(orderMaster.getOrderStatus()));
+        orderInfo.put("submitTime",DateUtil.DateToString( orderMaster.getCreateTime(),"yyyy-MM-dd HH:mm:ss"));
+        orderInfo.put("payTime",DateUtil.DateToString( orderMaster.getWaitReceiveTime(),"yyyy-MM-dd HH:mm:ss"));
+        orderInfo.put("finishTime",DateUtil.DateToString( orderMaster.getFinishedTime(),"yyyy-MM-dd HH:mm:ss"));
+        orderInfo.put("cancelTime",DateUtil.DateToString( orderMaster.getCancelTime(),"yyyy-MM-dd HH:mm:ss"));
 
         List<OrderListProductVo> productDetailList = new ArrayList<>();
         QueryWrapper orderDetailWrapper = new QueryWrapper();
@@ -205,6 +198,10 @@ public class OrderMasterController{
         order.setTotalCarriage(orderInfo.getFreight());
         order.setShopId(0);
         order.setTotalGoodsAmout(orderInfo.getTotalAmount().subtract(orderInfo.getFreight()));
+        //订单状态 待付款(状态)
+        order.setCreateTime(new Date());
+        order.setOrderStatus(SystemConfig.ORDER_STATUS_WAIT_PAY);
+        order.setWaitPayTime(new Date());
         //订单号
         order.setSystemOrderNo(generateOrderSn(userId));
         boolean isSaveSuccess = baseService.save(order);
@@ -216,13 +213,7 @@ public class OrderMasterController{
         QueryWrapper<ShoppingCart> removeWrapper = new QueryWrapper<>();
         removeWrapper.eq("user_id",userId);
         shoppingCartService.remove(removeWrapper);
-        //订单状态
-        OrderStatus orderStatus = new OrderStatus();
-        orderStatus.setCreateTime(new Date());
-        orderStatus.setOrderId(orderId);
-        //待付款(状态)
-        orderStatus.setOrderStatus(SystemConfig.ORDER_STATUS_WAIT_PAY);
-        orderStatusService.save(orderStatus);
+
         //订单详情
        for(OrderProductVo orderProductVo : orderProductVoList){
            //商品数量/库存减少
@@ -322,19 +313,21 @@ public class OrderMasterController{
         if (id == null) {
             return result.error("参数错误");
         }
-        //判断订单状态是否为待付款
-        QueryWrapper<OrderStatus> orderStatusWarpper = new QueryWrapper();
-        orderStatusWarpper.eq("order_id",id);
-        OrderStatus orderStatus = orderStatusService.getOne(orderStatusWarpper);
-        if(orderStatus == null || (orderStatus.getOrderStatus() - SystemConfig.ORDER_STATUS_RECIEVE != 0)){
+        OrderMaster orderMaster = baseService.getById(id);
+        if(orderMaster == null){
+            return result.error("订单不存在");
+        }
+        //判断订单状态是否为 待收货
+        if(orderMaster.getOrderStatus() - SystemConfig.ORDER_STATUS_RECIEVE != 0){
             return result.error("订单状态不对");
         }
 
         // 设置订单已完成
-        OrderStatus setOrderStatus = new OrderStatus();
-        setOrderStatus.setId(orderStatus.getId());
-        setOrderStatus.setOrderStatus(SystemConfig.ORDER_STATUS_FINISH );
-        if (!orderStatusService.updateById(setOrderStatus)) {
+        OrderMaster updateStatus = new OrderMaster();
+        updateStatus.setId(orderMaster.getId());
+        updateStatus.setOrderStatus(SystemConfig.ORDER_STATUS_FINISH );
+        updateStatus.setFinishedTime(new Date());
+        if (!baseService.updateById(updateStatus)) {
             throw new RuntimeException("确认收货失败");
         }
         return result.success("确认收货成功");
@@ -354,19 +347,22 @@ public class OrderMasterController{
         if (id == null) {
             return result.error("参数错误");
         }
+
+        OrderMaster orderMaster = baseService.getById(id);
+        if(orderMaster == null){
+            return result.error("订单不存在");
+        }
         //判断订单状态是否为待付款
-        QueryWrapper<OrderStatus> orderStatusWarpper = new QueryWrapper();
-        orderStatusWarpper.eq("order_id",id);
-        OrderStatus orderStatus = orderStatusService.getOne(orderStatusWarpper);
-        if(orderStatus == null || (orderStatus.getOrderStatus() - SystemConfig.ORDER_STATUS_WAIT_PAY != 0)){
-            return result.error("订单不存在或状态不对");
+        if(orderMaster.getOrderStatus() - SystemConfig.ORDER_STATUS_WAIT_PAY != 0){
+            return result.error("订单状态不对");
         }
 
         // 设置订单已取消状态
-        OrderStatus setOrderStatus = new OrderStatus();
-        setOrderStatus.setId(orderStatus.getId());
-        setOrderStatus.setOrderStatus(SystemConfig.ORDER_STATUS_CANCLE );
-        if (!orderStatusService.updateById(setOrderStatus)) {
+        OrderMaster upOrderCancel = new OrderMaster();
+        upOrderCancel.setId(orderMaster.getId());
+        upOrderCancel.setOrderStatus(SystemConfig.ORDER_STATUS_CANCLE );
+        upOrderCancel.setCancelTime(new Date());
+        if (!baseService.updateById(upOrderCancel)) {
             throw new RuntimeException("更新数据已失效");
         }
 
