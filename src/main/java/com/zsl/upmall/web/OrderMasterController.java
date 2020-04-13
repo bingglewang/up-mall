@@ -20,10 +20,7 @@ import com.zsl.upmall.task.OrderUnpaidTask;
 import com.zsl.upmall.task.TaskService;
 import com.zsl.upmall.util.DateUtil;
 import com.zsl.upmall.util.HttpClientUtil;
-import com.zsl.upmall.vo.in.CreateOrderVo;
-import com.zsl.upmall.vo.in.OrderProductVo;
-import com.zsl.upmall.vo.in.SkuAddStockVo;
-import com.zsl.upmall.vo.in.SkuDetailVo;
+import com.zsl.upmall.vo.in.*;
 import com.zsl.upmall.vo.out.OrderListVo;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -104,9 +101,9 @@ public class OrderMasterController{
             productDetailList.add(skuDetailVo);
         }
         orderInfo.put("productDetailList",productDetailList);
-        //订单地址信息(todo)
-       /* AddressInfo addressInfo = addressService.addressInfo(new Long(orderMaster.getAddressId()));
-        orderInfo.put("addressInfo",addressInfo);*/
+        //订单地址信息
+        AddressInfo addressInfo = HttpClientUtil.getAddressInfoById(orderMaster.getAddressId(),requestContext.getToken());
+        orderInfo.put("addressInfo",addressInfo);
         return result.success(orderInfo);
     }
 
@@ -134,11 +131,11 @@ public class OrderMasterController{
             return result.error("参数错误");
         }
 
-        // 收货地址 （todo）
-      /*  UserAddress checkedAddress = userAddressService.getById(orderInfo.getAddressId());
-        if (checkedAddress == null) {
+        // 收货地址
+        AddressInfo addressInfo = HttpClientUtil.getAddressInfoById(orderInfo.getAddressId(),requestContext.getToken());
+        if (addressInfo == null) {
             return result.error("地址不存在");
-        }*/
+        }
 
         // 商品价格
         List<OrderProductVo> orderProductVoList = new ArrayList<>();

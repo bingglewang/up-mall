@@ -21,6 +21,8 @@ public class SystemConfig {
     public final static String SKU_SUB_ADD_STOCK = "http://upmall.cntracechain.com/common-goods/common/skuSell";
     // 获取 SKU用户售价
     public final static String SKU_USER_COST_PRICE = "http://upmall.cntracechain.com/common-goods/upMall/userPrice/sku/";
+    // 获取地址详情
+    public final static String ADDRESS_DETAIL = "http://upmall.cntracechain.com/user/userAddress/getById";
 
 
 

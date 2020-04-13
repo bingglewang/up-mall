@@ -11,7 +11,7 @@ import org.apache.ibatis.annotations.Mapper;
 import com.zsl.upmall.entity.OrderDetailRate;
 
 /**   
- * @Description:TODO(数据访问层)
+ * @Description:订单评价(数据访问层)
  *
  * @version: V1.0
  * @author: binggleWang

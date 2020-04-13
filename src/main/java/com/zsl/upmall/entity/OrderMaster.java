@@ -18,7 +18,7 @@ import java.math.BigDecimal;
 import java.util.Date;
 
 /**
- * @Description:TODO(实体类)
+ * @Description:订单(实体类)
  *
  * @version: V1.0
  * @author: binggleWang

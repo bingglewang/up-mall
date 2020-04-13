@@ -14,7 +14,7 @@ import com.zsl.upmall.entity.OrderMaster;
 import org.apache.ibatis.annotations.Param;
 
 /**   
- * @Description:TODO(数据访问层)
+ * @Description:订单(数据访问层)
  *
  * @version: V1.0
  * @author: binggleWang

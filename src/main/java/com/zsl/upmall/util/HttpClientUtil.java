@@ -3,10 +3,7 @@ package com.zsl.upmall.util;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.zsl.upmall.config.SystemConfig;
-import com.zsl.upmall.vo.in.CommonGoodsResult;
-import com.zsl.upmall.vo.in.SkuAddStockVo;
-import com.zsl.upmall.vo.in.SkuDetailVo;
-import com.zsl.upmall.vo.in.SkuResult;
+import com.zsl.upmall.vo.in.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -167,16 +164,40 @@ public class HttpClientUtil {
         return i;
     }
 
+    /**
+     * 获取地址详情
+     * @param addressId
+     * @return
+     */
+    public static AddressInfo getAddressInfoById(Integer addressId,String token){
+        String result = doGet(SystemConfig.ADDRESS_DETAIL+"/"+addressId+"?token="+token);
+        AddressInfo addressInfo = null;
+        try {
+            if(StringUtils.isNotBlank(result)){
+                AddressResultVo addressResultVo = JSON.parseObject(result,AddressResultVo.class);
+                if(addressResultVo != null){
+                   addressInfo = addressResultVo.getData();
+                }
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return addressInfo;
+    }
+
+
     public static void main(String[] args) {
           /*SkuDetailVo skuDetailVo = getSkuDetailById(23);
         System.out.println("我的封装结果："+skuDetailVo);*/
-        SkuAddStockVo skuAddStockVo = new SkuAddStockVo();
+       /* SkuAddStockVo skuAddStockVo = new SkuAddStockVo();
         skuAddStockVo.setCount(2);
         skuAddStockVo.setSkuId(1);
         List<SkuAddStockVo> skuAddStockVos = new ArrayList<>();
         skuAddStockVos.add(skuAddStockVo);
         int i = skuSubAddStock(skuAddStockVos,"",false);
-        System.out.println("我的封装结果："+ i);
+        System.out.println("我的封装结果："+ i);*/
+      /* AddressInfo addressInfo = getAddressInfoById(5,"92141c1b-db5c-4082-bd36-7cbdf19aa159");
+        System.out.println("地址详情："+ addressInfo);*/
     }
 
 
