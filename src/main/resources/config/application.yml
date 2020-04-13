@@ -34,15 +34,6 @@ mybatis-plus:
     map-underscore-to-camel-case: true
     cache-enabled: false
 
-#微信配置
-upmall:
-  wx:
-    app-id: wx8820721597cb9b10
-    app-secret: 32f9e34328ef46d86b3f2aa9e30b4772
-#测试
-#    app-id: wxfd260d4e22b0e837
-#    app-secret: c2485a8e311391f3db5047536a099546
-
 logging:
 #  level:
 #    root: info #日志配置DEBUG,INFO,WARN,ERROR

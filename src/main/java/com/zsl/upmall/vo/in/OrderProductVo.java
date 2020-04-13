@@ -1,4 +1,4 @@
-package com.zsl.upmall.vo.in.order;
+package com.zsl.upmall.vo.in;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

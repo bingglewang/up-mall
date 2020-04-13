@@ -9,11 +9,7 @@ package com.zsl.upmall.service;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.zsl.upmall.entity.OrderMaster;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.zsl.upmall.vo.out.address.AddressInfo;
-import com.zsl.upmall.vo.out.order.OrderListVo;
-import org.apache.ibatis.annotations.Param;
-
-import java.util.List;
+import com.zsl.upmall.vo.out.OrderListVo;
 
 /**
  * @Description:TODO(服务层)

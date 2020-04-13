@@ -10,12 +10,9 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.zsl.upmall.entity.OrderMaster;
 import com.zsl.upmall.mapper.OrderMasterDao;
 import com.zsl.upmall.service.OrderMasterService;
-import com.zsl.upmall.vo.out.address.AddressInfo;
-import com.zsl.upmall.vo.out.order.OrderListVo;
+import com.zsl.upmall.vo.out.OrderListVo;
 import org.springframework.stereotype.Service;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-
-import java.util.List;
 
 /**   
  * @Description:TODO(服务实现)

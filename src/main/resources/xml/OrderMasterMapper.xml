@@ -28,12 +28,11 @@
 		id, system_order_no, transaction_order_no, pay_way, member_id, address_id, shop_id, total_goods_amout, total_carriage, practical_pay, hidden, remark, tracking_company_id, tracking_number, order_status, create_time, wait_pay_time, wait_receive_time, finished_time, cancel_time
 	</sql>
 
-	<resultMap id="OrderListResultMap" type="com.zsl.upmall.vo.out.order.OrderListVo">
+	<resultMap id="OrderListResultMap" type="com.zsl.upmall.vo.out.OrderListVo">
 		<id column="orderId" property="orderId" />
 		<id column="orderSn" property="orderSn" />
 		<id column="orderStatus" property="orderStatus" />
 		<id column="totalAmount" property="totalAmount" />
-		<collection column="orderId" property="orderListProductList" select="getOrderListProductList"></collection>
 	</resultMap>
 
 
@@ -54,27 +53,4 @@
 		ORDER BY
 		    orderM.create_time DESC
 	</select>
-
-
-	<resultMap id="OrderListProductListMap" type="com.zsl.upmall.vo.out.product.OrderListProductVo">
-		<id column="productCount" property="productCount" />
-		<id column="productName" property="productName" />
-		<id column="productImg" property="productImg" />
-		<id column="productPrice" property="productPrice" />
-	</resultMap>
-
-	<select id="getOrderListProductList" resultMap="OrderListProductListMap">
-		SELECT
-			detailO.goods_count productCount,
-		    sk.sku_name productName,
-			sk.sku_picture productImg,
-			sk.retail_price productPrice
-		FROM
-			order_detail detailO
-		LEFT JOIN sku sk on sk.id = detailO.sku_id
-		where detailO.order_id = #{orderId}
-	</select>
-
-
-
 </mapper>

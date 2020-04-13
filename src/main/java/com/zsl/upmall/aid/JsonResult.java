@@ -83,7 +83,7 @@ public class JsonResult<T> implements Serializable{
     }
 
     public JsonResult<T> error(Integer code,String message) {
-        this.setCode(code+"");
+        this.setCode(300000+code+"");
         this.setMessage(message);
         this.setData(null);
         return this;

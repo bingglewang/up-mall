@@ -1,4 +1,4 @@
-package com.zsl.upmall.vo.in.order;
+package com.zsl.upmall.vo.in;
 
 import com.zsl.upmall.validator.FlagValidator;
 import lombok.Data;

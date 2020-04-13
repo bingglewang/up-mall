@@ -1,6 +1,5 @@
-package com.zsl.upmall.vo.out.order;
+package com.zsl.upmall.vo.out;
 
-import com.zsl.upmall.vo.out.product.OrderListProductVo;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -17,5 +16,5 @@ public class OrderListVo {
     /** 订单id */
     private Integer orderId;
     /** 订单商品列表 */
-    private List<OrderListProductVo> orderListProductList;
+   // private List<OrderListProductVo> orderListProductList;
 }

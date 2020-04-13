@@ -2,16 +2,19 @@ package com.zsl.upmall.task;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.zsl.upmall.config.SystemConfig;
+import com.zsl.upmall.context.RequestContext;
+import com.zsl.upmall.context.RequestContextMgr;
 import com.zsl.upmall.entity.OrderDetail;
 import com.zsl.upmall.entity.OrderMaster;
-import com.zsl.upmall.entity.Sku;
 import com.zsl.upmall.service.OrderDetailService;
 import com.zsl.upmall.service.OrderMasterService;
-import com.zsl.upmall.service.SkuService;
 import com.zsl.upmall.util.BeanUtil;
+import com.zsl.upmall.util.HttpClientUtil;
+import com.zsl.upmall.vo.in.SkuAddStockVo;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -35,7 +38,6 @@ public class OrderUnpaidTask extends Task {
 
         OrderMasterService orderService = BeanUtil.getBean(OrderMasterService.class);
         OrderDetailService orderDetailService = BeanUtil.getBean(OrderDetailService.class);
-        SkuService skuService = BeanUtil.getBean(SkuService.class);
 
         //判断订单是否存在
         OrderMaster order = orderService.getById(this.orderId);
@@ -62,14 +64,19 @@ public class OrderUnpaidTask extends Task {
         orderDetailWrapper.eq("order_id",this.orderId);
         List<OrderDetail> orderDetails = orderDetailService.list(orderDetailWrapper);
 
-        for (OrderDetail orderGoods : orderDetails) {
-            Sku  skuDetail  = skuService.getById(orderGoods.getSkuId());
-            Sku addStock = new Sku();
-            addStock.setId(skuDetail.getId());
-            addStock.setStock(skuDetail.getStock() + orderGoods.getGoodsCount());
-            if ( !skuService.updateById(addStock)) {
-                throw new RuntimeException("商品货品库存增加失败");
-            }
+        RequestContext requestContext = RequestContextMgr.getLocalContext();
+
+        //商品数量/库存减少
+        List<SkuAddStockVo> skuAddStockVos = new ArrayList<>();
+        for(OrderDetail orderGoods : orderDetails){
+            SkuAddStockVo skuAddStockVo = new SkuAddStockVo();
+            skuAddStockVo.setCount(orderGoods.getGoodsCount());
+            skuAddStockVo.setSkuId(orderGoods.getSkuId());
+            skuAddStockVos.add(skuAddStockVo);
+        }
+        int addSubStock = HttpClientUtil.skuSubAddStock(skuAddStockVos,requestContext.getToken(),true);
+        if(addSubStock - 0 == 0){
+            throw new RuntimeException("商品货品库存增加失败");
         }
         logger.info("系统结束处理延时任务---订单超时未付款---" + this.orderId);
     }

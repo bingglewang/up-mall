@@ -19,11 +19,14 @@ import com.zsl.upmall.service.*;
 import com.zsl.upmall.task.OrderUnpaidTask;
 import com.zsl.upmall.task.TaskService;
 import com.zsl.upmall.util.DateUtil;
-import com.zsl.upmall.vo.in.order.CreateOrderVo;
-import com.zsl.upmall.vo.in.order.OrderProductVo;
-import com.zsl.upmall.vo.out.address.AddressInfo;
-import com.zsl.upmall.vo.out.order.OrderListVo;
-import com.zsl.upmall.vo.out.product.OrderListProductVo;
+import com.zsl.upmall.util.HttpClientUtil;
+import com.zsl.upmall.vo.in.CreateOrderVo;
+import com.zsl.upmall.vo.in.OrderProductVo;
+import com.zsl.upmall.vo.in.SkuAddStockVo;
+import com.zsl.upmall.vo.in.SkuDetailVo;
+import com.zsl.upmall.vo.out.OrderListVo;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -45,26 +48,16 @@ import java.util.*;
 @RestController
 @RequestMapping("/order")
 public class OrderMasterController{
+    private final Log logger = LogFactory.getLog(OrderMasterController.class);
+
     @Autowired
     protected OrderMasterService baseService;
-
-    @Autowired
-    private UserAddressService userAddressService;
-
-    @Autowired
-    private SkuService skuService;
 
     @Autowired
     private OrderDetailService orderDetailService;
 
     @Autowired
-    private UserAddressService addressService;
-
-    @Autowired
     private TaskService taskService;
-
-    @Autowired
-    private ShoppingCartService shoppingCartService;
 
     protected JsonResult result = new JsonResult();
 
@@ -97,23 +90,23 @@ public class OrderMasterController{
         orderInfo.put("finishTime",DateUtil.DateToString( orderMaster.getFinishedTime(),"yyyy-MM-dd HH:mm:ss"));
         orderInfo.put("cancelTime",DateUtil.DateToString( orderMaster.getCancelTime(),"yyyy-MM-dd HH:mm:ss"));
 
-        List<OrderListProductVo> productDetailList = new ArrayList<>();
+        //用户token
+        RequestContext requestContext = RequestContextMgr.getLocalContext();
+
+        //订单商品列表
+        List<SkuDetailVo> productDetailList = new ArrayList<>();
         QueryWrapper orderDetailWrapper = new QueryWrapper();
         orderDetailWrapper.eq("order_id",id);
         List<OrderDetail> orderDetails = orderDetailService.list(orderDetailWrapper);
 
         for (OrderDetail orderGoods : orderDetails) {
-            Sku  skuDetail  = skuService.getById(orderGoods.getSkuId());
-            OrderListProductVo orderListProductVo = new OrderListProductVo();
-            orderListProductVo.setProductCount(orderGoods.getGoodsCount());
-            orderListProductVo.setProductImg(skuDetail.getSkuPicture());
-            orderListProductVo.setProductName(skuDetail.getSkuName());
-            orderListProductVo.setProductPrice(skuDetail.getRetailPrice());
-            productDetailList.add(orderListProductVo);
+            SkuDetailVo skuDetailVo = HttpClientUtil.getSkuDetailById(orderGoods.getSkuId(),requestContext.getToken());
+            productDetailList.add(skuDetailVo);
         }
         orderInfo.put("productDetailList",productDetailList);
-        AddressInfo addressInfo = addressService.addressInfo(new Long(orderMaster.getAddressId()));
-        orderInfo.put("addressInfo",addressInfo);
+        //订单地址信息(todo)
+       /* AddressInfo addressInfo = addressService.addressInfo(new Long(orderMaster.getAddressId()));
+        orderInfo.put("addressInfo",addressInfo);*/
         return result.success(orderInfo);
     }
 
@@ -141,49 +134,33 @@ public class OrderMasterController{
             return result.error("参数错误");
         }
 
-        // 收货地址
-        UserAddress checkedAddress = userAddressService.getById(orderInfo.getAddressId());
+        // 收货地址 （todo）
+      /*  UserAddress checkedAddress = userAddressService.getById(orderInfo.getAddressId());
         if (checkedAddress == null) {
             return result.error("地址不存在");
-        }
+        }*/
 
         // 商品价格
         List<OrderProductVo> orderProductVoList = new ArrayList<>();
         if (orderInfo.getCartId().equals(0)) {
+
             // 普通
-            Sku sku = skuService.getById(orderInfo.getProductId());
-            if(sku == null || (sku.getStatus()-1 != 0)){
+            SkuDetailVo sku = HttpClientUtil.getSkuDetailById(orderInfo.getProductId(),requestContext.getToken());
+            if(sku == null || sku.getStatus()){
                 return result.error("商品不存在或已下架");
             }
             //需要支付得 价格
-            BigDecimal needTotalPrice = sku.getRetailPrice().multiply(new BigDecimal(orderInfo.getProductCount())).add(orderInfo.getFreight());
+            BigDecimal needTotalPrice = sku.getSkuPrice().multiply(new BigDecimal(orderInfo.getProductCount())).add(orderInfo.getFreight());
             if(needTotalPrice.compareTo(orderInfo.getTotalAmount()) != 0){
                 return result.error("订单价格不一致");
             }
-            orderProductVoList.add(new OrderProductVo(sku.getId(),orderInfo.getProductCount(),sku.getRetailPrice()));
+            orderProductVoList.add(new OrderProductVo(sku.getSkuId(),orderInfo.getProductCount(),sku.getSkuPrice()));
 
         } else {
-            // 购物车
-            QueryWrapper<ShoppingCart> queryWrapper = new QueryWrapper<>();
-            queryWrapper.eq("user_id",userId);
-            List<ShoppingCart> shoppingCarts = shoppingCartService.list(queryWrapper);
-            if(shoppingCarts.isEmpty()){
-                return  result.error("购物车已经清空");
-            }
-            BigDecimal needTotalCartPrice = new BigDecimal(0);
-            for(ShoppingCart cart : shoppingCarts){
-                BigDecimal itemPrice = cart.getAddedPrice().multiply(new BigDecimal(cart.getGoodsNum()));
-                needTotalCartPrice = needTotalCartPrice.add(itemPrice);
-                orderProductVoList.add(new OrderProductVo(cart.getSkuId(),cart.getGoodsNum(),cart.getAddedPrice()));
-            }
-            needTotalCartPrice.add(orderInfo.getFreight());
-            if(needTotalCartPrice.compareTo(orderInfo.getTotalAmount()) != 0){
-                return result.error("订单价格不一致");
-            }
-            if(orderProductVoList.isEmpty()){
-                return result.error("请选择需要购买得商品");
-            }
+            // 购物车 (没有 todo)
         }
+
+        //限制每个价格的套餐只能购买一次(说是前端可以限制 todo)
 
         //创建订单
         Long orderId = null;
@@ -209,19 +186,23 @@ public class OrderMasterController{
             return result.error("下单失败");
         }
         orderId = order.getId();
-        // 如果是购物车结算则清除购物车
-        QueryWrapper<ShoppingCart> removeWrapper = new QueryWrapper<>();
-        removeWrapper.eq("user_id",userId);
-        shoppingCartService.remove(removeWrapper);
+        // 如果是购物车结算则清除购物车 (todo )
+
+        //商品数量/库存减少
+        List<SkuAddStockVo> skuAddStockVos = new ArrayList<>();
+        for(OrderProductVo orderProductVo : orderProductVoList){
+            SkuAddStockVo skuAddStockVo = new SkuAddStockVo();
+            skuAddStockVo.setCount(orderProductVo.getProductCount());
+            skuAddStockVo.setSkuId(orderProductVo.getSkuId());
+            skuAddStockVos.add(skuAddStockVo);
+        }
+        int addSubStock = HttpClientUtil.skuSubAddStock(skuAddStockVos,requestContext.getToken(),false);
+        if(addSubStock - 0 == 0){
+            return result.error("扣库存失败");
+        }
 
         //订单详情
        for(OrderProductVo orderProductVo : orderProductVoList){
-           //商品数量/库存减少
-           Sku skuDetail = skuService.getById(orderProductVo.getSkuId());
-           Sku productCountReduce = new Sku();
-           productCountReduce.setId(skuDetail.getId());
-           productCountReduce.setStock(skuDetail.getStock() - orderProductVo.getProductCount());
-           skuService.updateById(productCountReduce);
            //订单详情
            OrderDetail orderDetail = new OrderDetail();
            orderDetail.setActualCount(orderProductVo.getProductCount());
@@ -330,6 +311,7 @@ public class OrderMasterController{
         if (!baseService.updateById(updateStatus)) {
             throw new RuntimeException("确认收货失败");
         }
+        // todo 用户冻结积分，冻结余额操作
         return result.success("确认收货成功");
     }
 
@@ -366,20 +348,25 @@ public class OrderMasterController{
             throw new RuntimeException("更新数据已失效");
         }
 
+        RequestContext requestContext = RequestContextMgr.getLocalContext();
         // 商品货品数量增加
         QueryWrapper orderDetailWrapper = new QueryWrapper();
         orderDetailWrapper.eq("order_id",id);
         List<OrderDetail> orderDetails = orderDetailService.list(orderDetailWrapper);
 
-        for (OrderDetail orderGoods : orderDetails) {
-            Sku  skuDetail  = skuService.getById(orderGoods.getSkuId());
-            Sku addStock = new Sku();
-            addStock.setId(skuDetail.getId());
-            addStock.setStock(skuDetail.getStock() + orderGoods.getGoodsCount());
-            if ( !skuService.updateById(addStock)) {
-                throw new RuntimeException("商品货品库存增加失败");
-            }
+        //商品数量/库存减少
+        List<SkuAddStockVo> skuAddStockVos = new ArrayList<>();
+        for(OrderDetail orderGoods : orderDetails){
+            SkuAddStockVo skuAddStockVo = new SkuAddStockVo();
+            skuAddStockVo.setCount(orderGoods.getGoodsCount());
+            skuAddStockVo.setSkuId(orderGoods.getSkuId());
+            skuAddStockVos.add(skuAddStockVo);
         }
+        int addSubStock = HttpClientUtil.skuSubAddStock(skuAddStockVos,requestContext.getToken(),true);
+        if(addSubStock - 0 == 0){
+            return result.error("扣库存失败");
+        }
+
         return result.success("修改成功");
     }
 
@@ -410,8 +397,5 @@ public class OrderMasterController{
         orderDetailWrapper.eq("member_id",userId).eq("hidden",0);
         return result.success(baseService.list(orderDetailWrapper));
     }
-
-
-
 
 }

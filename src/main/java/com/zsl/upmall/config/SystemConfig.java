@@ -15,6 +15,13 @@ public class SystemConfig {
     // 订单状态（ 已取消）
     public final static Integer ORDER_STATUS_CANCLE = 3;
 
+    //sku 详情接口路径
+    public final static String SKU_DETAIL_URL = "http://upmall.cntracechain.com/common-goods/common/skuDetail";
+    // 扣减库存
+    public final static String SKU_SUB_ADD_STOCK = "http://upmall.cntracechain.com/common-goods/common/skuSell";
+    // 获取 SKU用户售价
+    public final static String SKU_USER_COST_PRICE = "http://upmall.cntracechain.com/common-goods/upMall/userPrice/sku/";
+
 
 
     public static String getStatusText(Integer status){
