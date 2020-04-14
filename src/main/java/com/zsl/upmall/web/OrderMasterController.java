@@ -6,11 +6,13 @@
  */
 package com.zsl.upmall.web;
 
+import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.zsl.upmall.aid.JsonResult;
 import com.zsl.upmall.aid.PageParam;
+import com.zsl.upmall.config.SynQueryDemo;
 import com.zsl.upmall.config.SystemConfig;
 import com.zsl.upmall.context.RequestContext;
 import com.zsl.upmall.context.RequestContextMgr;
@@ -21,7 +23,9 @@ import com.zsl.upmall.task.TaskService;
 import com.zsl.upmall.util.DateUtil;
 import com.zsl.upmall.util.HttpClientUtil;
 import com.zsl.upmall.vo.in.*;
+import com.zsl.upmall.vo.out.Logistics;
 import com.zsl.upmall.vo.out.OrderListVo;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,6 +59,9 @@ public class OrderMasterController{
 
     @Autowired
     private TaskService taskService;
+
+    @Autowired
+    private TrackingService trackingService;
 
     protected JsonResult result = new JsonResult();
 
@@ -459,5 +466,36 @@ public class OrderMasterController{
             }
             return result.success("",false);
         }
+    }
+
+    /**
+     * 查看物流
+     * @param orderId
+     * @return
+     */
+    @GetMapping("getTracking/{id}")
+    public JsonResult isBuyPackage(@PathVariable("id") Integer orderId) {
+        OrderMaster orderMaster = baseService.getById(orderId);
+        if(orderMaster == null || orderMaster.getTrackingCompanyId() == null || StringUtils.isBlank(orderMaster.getTrackingNumber())){
+            return result.error("物流信息为空");
+        }
+
+        Tracking tracking = trackingService.getById(orderMaster.getTrackingCompanyId());
+        if(tracking == null){
+            return result.error("不支持该物流公司");
+        }
+
+        String resultTracking = new SynQueryDemo().synQueryData(tracking.getTrackingCode(), orderMaster.getTrackingNumber(), "", "", "");
+        Logistics logistics = null;
+        if(StringUtils.isNotBlank(resultTracking)){
+            try{
+                logistics = JSON.parseObject(resultTracking,Logistics.class);
+            }catch (Exception e){
+
+            }
+        }else{
+            return result.error("获取物流失败");
+        }
+        return result.success(logistics);
     }
 }
