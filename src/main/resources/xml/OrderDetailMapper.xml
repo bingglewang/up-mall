@@ -13,9 +13,12 @@
 		<id column="goods_amount" property="goodsAmount" />
 		<id column="practical_clearing" property="practicalClearing" />
 		<id column="clearing_info" property="clearingInfo" />
+		<id column="goods_name" property="goodsName" />
+		<id column="goods_img" property="goodsImg" />
+		<id column="goods_spec" property="goodsSpec" />
 	</resultMap>
 	<sql id="Base_Column_List">
-		id, order_id, sku_id, goods_count, actual_count, goods_price, goods_carriage, goods_amount, practical_clearing, clearing_info
+		id, order_id, sku_id, goods_count, actual_count, goods_price, goods_carriage, goods_amount, practical_clearing, clearing_info, goods_name, goods_img, goods_spec
 	</sql>
 	
 </mapper>

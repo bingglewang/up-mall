@@ -143,7 +143,7 @@ public class OrderMasterController{
 
             // 普通
             SkuDetailVo sku = HttpClientUtil.getSkuDetailById(orderInfo.getProductId(),requestContext.getToken());
-            if(sku == null || sku.getStatus()){
+            if(sku == null || !sku.getStatus()){
                 return result.error("商品不存在或已下架");
             }
             //需要支付得 价格
@@ -215,7 +215,7 @@ public class OrderMasterController{
         // 订单支付超期任务
         taskService.addTask(new OrderUnpaidTask(orderId));
 
-        return result.success("下单成功",orderId);
+        return result.success("下单成功",order.getSystemOrderNo());
     }
 
 
@@ -373,13 +373,13 @@ public class OrderMasterController{
 
     /**
      * 按orderId查询OrderDetail对象（orderId）
-     * @param orderId 订单id
+     * @param orderSn 订单号
      * @return
      */
     @GetMapping("getOrderDetailByOrderId/{id}")
-    public JsonResult getOrderDetailByOrderId(@PathVariable("id") Integer orderId){
+    public JsonResult getOrderDetailByOrderId(@PathVariable("id") String orderSn){
         QueryWrapper orderDetailWrapper = new QueryWrapper();
-        orderDetailWrapper.eq("order_id",orderId);
+        orderDetailWrapper.eq("system_order_no",orderSn);
        return result.success(orderDetailService.list(orderDetailWrapper));
     }
 
