@@ -15,4 +15,5 @@ public class SkuDetailVo {
     private Boolean status;
     private String skuImage;
     private BigDecimal skuPrice;
+    private String spec;
 }

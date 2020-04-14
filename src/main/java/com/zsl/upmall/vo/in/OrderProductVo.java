@@ -11,4 +11,7 @@ public class OrderProductVo {
     private Integer skuId;
     private Integer productCount;
     private BigDecimal productPrice;
+    private String productImg;
+    private String spec;
+    private String productName;
 }

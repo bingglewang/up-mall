@@ -27,7 +27,7 @@ import java.util.Map;
 
 public class HttpClientUtil {
 
-    public static String doGet(String url, Map<String, String> param) {
+    public static String doGet(String url, Map<String, String> param,String token) {
 
         // 创建Httpclient对象
         CloseableHttpClient httpclient = HttpClients.createDefault();
@@ -46,6 +46,7 @@ public class HttpClientUtil {
 
             // 创建http GET请求
             HttpGet httpGet = new HttpGet(uri);
+            httpGet.setHeader("token",token);
 
             // 执行请求
             response = httpclient.execute(httpGet);
@@ -68,8 +69,12 @@ public class HttpClientUtil {
         return resultString;
     }
 
+    public static String doGetToken(String url,String token) {
+        return doGet(url, null,token);
+    }
+
     public static String doGet(String url) {
-        return doGet(url, null);
+        return doGet(url, null,"");
     }
 
     public static String doPost(String url, Map<String, String> param) {
@@ -119,18 +124,18 @@ public class HttpClientUtil {
     public static SkuDetailVo getSkuDetailById(Integer skuId,String token){
         //获取sku 详情
         String skuResult =  HttpClientUtil.doGet(SystemConfig.SKU_DETAIL_URL+"?system=UPMALL&skuId="+skuId);
-        System.out.println("sku详情获取结果--->"+skuResult);
         SkuDetailVo result = null;
         try {
             if(StringUtils.isNotBlank(skuResult)){
                 SkuResult skuObject = JSON.parseObject(skuResult,SkuResult.class);
                 if(skuObject != null && skuObject.getCode() - 200200 == 0){
                     result = skuObject.getData();
-                    String skuPriceResult =  HttpClientUtil.doGet(SystemConfig.SKU_USER_COST_PRICE+"/"+skuId+"&token="+token);
+                    String skuPriceResult =  HttpClientUtil.doGetToken(SystemConfig.SKU_USER_COST_PRICE+"/"+skuId,token);
                     if(StringUtils.isNotBlank(skuPriceResult)){
                         CommonGoodsResult skuPrice =  JSON.parseObject(skuPriceResult,CommonGoodsResult.class);
                         if(skuPrice != null && skuPrice.getCode() - 200200 == 0){
                             result.setSkuPrice(new BigDecimal(skuPrice.getData().toString()));
+                            System.out.println("sku详情获取结果--->"+skuResult);
                         }
                     }
                 }
@@ -185,6 +190,27 @@ public class HttpClientUtil {
         return addressInfo;
     }
 
+    /**
+     * 判断是否为套餐
+     * @param skuId
+     * @return
+     */
+    public static boolean isPackage(Integer skuId){
+        String result = doGet(SystemConfig.IS_ORDER_PACKAGE+"?skuId="+skuId);
+        boolean isPack = false;
+        try {
+            if(StringUtils.isNotBlank(result)){
+                CommonGoodsResult addressResultVo = JSON.parseObject(result,CommonGoodsResult.class);
+                if(addressResultVo != null){
+                    isPack = (boolean)addressResultVo.getData();
+                }
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return isPack;
+    }
+
 
     public static void main(String[] args) {
           /*SkuDetailVo skuDetailVo = getSkuDetailById(23);
@@ -198,6 +224,7 @@ public class HttpClientUtil {
         System.out.println("我的封装结果："+ i);*/
       /* AddressInfo addressInfo = getAddressInfoById(5,"92141c1b-db5c-4082-bd36-7cbdf19aa159");
         System.out.println("地址详情："+ addressInfo);*/
+        System.out.println("套餐判断结果："+ isPackage(46));
     }
 
 

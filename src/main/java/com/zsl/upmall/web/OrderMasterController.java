@@ -151,7 +151,7 @@ public class OrderMasterController{
             if(needTotalPrice.compareTo(orderInfo.getTotalAmount()) != 0){
                 return result.error("订单价格不一致");
             }
-            orderProductVoList.add(new OrderProductVo(sku.getSkuId(),orderInfo.getProductCount(),sku.getSkuPrice()));
+            orderProductVoList.add(new OrderProductVo(sku.getSkuId(),orderInfo.getProductCount(),sku.getSkuPrice(),sku.getSkuImage(),sku.getSpec(),sku.getSkuName()));
 
         } else {
             // 购物车 (没有 todo)
@@ -187,24 +187,20 @@ public class OrderMasterController{
 
         //商品数量/库存减少
         List<SkuAddStockVo> skuAddStockVos = new ArrayList<>();
-        for(OrderProductVo orderProductVo : orderProductVoList){
-            SkuAddStockVo skuAddStockVo = new SkuAddStockVo();
-            skuAddStockVo.setCount(orderProductVo.getProductCount());
-            skuAddStockVo.setSkuId(orderProductVo.getSkuId());
-            skuAddStockVos.add(skuAddStockVo);
-        }
-        int addSubStock = HttpClientUtil.skuSubAddStock(skuAddStockVos,requestContext.getToken(),false);
-        if(addSubStock - 0 == 0){
-            return result.error("扣库存失败");
-        }
-
         //订单详情
        for(OrderProductVo orderProductVo : orderProductVoList){
+           SkuAddStockVo skuAddStockVo = new SkuAddStockVo();
+           skuAddStockVo.setCount(orderProductVo.getProductCount());
+           skuAddStockVo.setSkuId(orderProductVo.getSkuId());
+           skuAddStockVos.add(skuAddStockVo);
            //订单详情
            OrderDetail orderDetail = new OrderDetail();
            orderDetail.setActualCount(orderProductVo.getProductCount());
            orderDetail.setGoodsCount(orderProductVo.getProductCount());
            orderDetail.setGoodsPrice(orderProductVo.getProductPrice());
+           orderDetail.setGoodsImg(orderProductVo.getProductImg());
+           orderDetail.setGoodsName(orderProductVo.getProductName());
+           orderDetail.setGoodsSpec(orderProductVo.getSpec());
            orderDetail.setGoodsCarriage(orderInfo.getFreight());
            orderDetail.setOrderId(orderId);
            orderDetail.setSkuId(orderProductVo.getSkuId());
@@ -212,10 +208,20 @@ public class OrderMasterController{
            orderDetail.setPracticalClearing(orderInfo.getTotalAmount());
            orderDetailService.save(orderDetail);
        }
+
+        int addSubStock = HttpClientUtil.skuSubAddStock(skuAddStockVos,requestContext.getToken(),false);
+        if(addSubStock - 0 == 0){
+            return result.error("扣库存失败");
+        }
+
         // 订单支付超期任务
         taskService.addTask(new OrderUnpaidTask(orderId));
-
-        return result.success("下单成功",order.getSystemOrderNo());
+        Map<String ,Object> map = new HashMap<>();
+        map.put("orderId",orderId);
+        map.put("orderSn",order.getSystemOrderNo());
+        map.put("create_order_time",DateUtil.DateToString( order.getCreateTime(),"yyyy-MM-dd HH:mm:ss"));
+        map.put("expire_time",order.getCreateTime().getTime() / 1000 + 30 * 60);
+        return result.success("下单成功",map);
     }
 
 
@@ -367,12 +373,38 @@ public class OrderMasterController{
         return result.success("修改成功");
     }
 
-    // todo 确认付款 (根据订单号)
-    // todo 付款后 改变张订单状态
+
+    /**
+     * 去付款(根据订单号)
+     * @param orderSn
+     * @return
+     */
+    @PostMapping("payOrder/{id}")
+    public JsonResult payOrder(@PathVariable("id") String orderSn){
+        QueryWrapper<OrderMaster> orderMasterQueryWrapper = new QueryWrapper();
+        orderMasterQueryWrapper.eq("system_order_no",orderSn).eq("hidden",0).last("LIMIT 1");
+        OrderMaster orderMaster = baseService.getOne(orderMasterQueryWrapper);
+        if(orderMaster == null){
+            return result.success("订单不存在");
+        }
+        if(orderMaster.getOrderStatus() - SystemConfig.ORDER_STATUS_WAIT_PAY != 0){
+            return result.success("订单状态错误");
+        }
+        // todo 调用支付接口
+        // 设置订单 待收货
+        OrderMaster upOrderReceived = new OrderMaster();
+        upOrderReceived.setId(orderMaster.getId());
+        upOrderReceived.setOrderStatus(SystemConfig.ORDER_STATUS_RECIEVE );
+        upOrderReceived.setWaitReceiveTime(new Date());
+        if (!baseService.updateById(upOrderReceived)) {
+            throw new RuntimeException("更新数据已失效");
+        }
+        return result.success("付款成功");
+    }
 
 
     /**
-     * 按orderId查询OrderDetail对象（orderId）
+     * 按orderSn查询OrderDetail对象（orderSn）
      * @param orderSn 订单号
      * @return
      */
@@ -395,4 +427,37 @@ public class OrderMasterController{
         return result.success(baseService.list(orderDetailWrapper));
     }
 
+
+    /**
+     * 判断该订单有没有支付（）（订单号, 套餐唯一标识）
+     * @param orderSn  订单号
+     * @return
+     */
+    @GetMapping("isBuyPackage")
+    public JsonResult isBuyPackage(String orderSn) {
+        QueryWrapper<OrderMaster> orderMasterQueryWrapper = new QueryWrapper();
+        orderMasterQueryWrapper.eq("system_order_no",orderSn).eq("hidden",0).last("LIMIT 1");
+        OrderMaster orderMaster = baseService.getOne(orderMasterQueryWrapper);
+        if(orderMaster == null){
+            return result.error("订单不存在",false);
+        }
+        if(orderMaster.getOrderStatus() - SystemConfig.ORDER_STATUS_WAIT_PAY == 0){
+            return result.error("订单没有支付",false);
+        }else if(orderMaster.getOrderStatus() - SystemConfig.ORDER_STATUS_CANCLE == 0){
+            return result.error("订单已取消",false);
+        }else{
+            //判断订单详情sku数量是否为1
+            QueryWrapper<OrderDetail> orderDetailQueryWrapper = new QueryWrapper();
+            orderDetailQueryWrapper.eq("order_id",orderMaster.getId()).last("LIMIT 1");
+            OrderDetail orderDetail = orderDetailService.getOne(orderDetailQueryWrapper);
+            if(orderDetail == null){
+                return result.error("订单错误",false);
+            }else{
+                if(orderDetail.getGoodsCount() - 1 == 0){
+                    return result.success( orderDetail.getGoodsPrice() + "",HttpClientUtil.isPackage(orderDetail.getSkuId()));
+                }
+            }
+            return result.success("",false);
+        }
+    }
 }
