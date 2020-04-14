@@ -124,7 +124,7 @@
     </dependencies>
 
     <build>
-        <finalName>up-mall-binggleW</finalName>
+        <finalName>up-mall-order</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>

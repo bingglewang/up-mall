@@ -417,8 +417,14 @@ public class OrderMasterController{
      */
     @GetMapping("getOrderDetailByOrderId/{id}")
     public JsonResult getOrderDetailByOrderId(@PathVariable("id") String orderSn){
+        QueryWrapper<OrderMaster> OrderMasterWrapper = new QueryWrapper();
+        OrderMasterWrapper.eq("system_order_no",orderSn).last("LIMIT 1");
+        OrderMaster orderMaster = baseService.getOne(OrderMasterWrapper);
+        if(orderMaster == null ){
+            return result.error("订单不存在");
+        }
         QueryWrapper orderDetailWrapper = new QueryWrapper();
-        orderDetailWrapper.eq("system_order_no",orderSn);
+        orderDetailWrapper.eq("order_id",orderMaster.getId());
        return result.success(orderDetailService.list(orderDetailWrapper));
     }
 
@@ -486,16 +492,22 @@ public class OrderMasterController{
         }
 
         String resultTracking = new SynQueryDemo().synQueryData(tracking.getTrackingCode(), orderMaster.getTrackingNumber(), "", "", "");
-        Logistics logistics = null;
         if(StringUtils.isNotBlank(resultTracking)){
             try{
-                logistics = JSON.parseObject(resultTracking,Logistics.class);
+                Logistics logistics = JSON.parseObject(resultTracking,Logistics.class);
+                if(logistics != null && logistics.getStatus() - 200 == 0){
+                    return result.success(logistics.getData());
+                }else{
+                    if(logistics == null){
+                        return result.error("物流信息为空");
+                    }
+                    return result.error(logistics.getMessage());
+                }
             }catch (Exception e){
-
+                return result.error("获取物流失败");
             }
         }else{
             return result.error("获取物流失败");
         }
-        return result.success(logistics);
     }
 }
