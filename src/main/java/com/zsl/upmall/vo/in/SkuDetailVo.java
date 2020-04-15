@@ -16,4 +16,5 @@ public class SkuDetailVo {
     private String skuImage;
     private BigDecimal skuPrice;
     private String spec;
+    private Integer productCount;
 }

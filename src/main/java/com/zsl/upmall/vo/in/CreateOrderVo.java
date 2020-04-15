@@ -3,6 +3,7 @@ package com.zsl.upmall.vo.in;
 import com.zsl.upmall.validator.FlagValidator;
 import lombok.Data;
 
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
@@ -13,6 +14,11 @@ public class CreateOrderVo {
      */
     @NotNull(message = "地址不能为空")
     private Integer addressId;
+
+    /**
+     * 订单号(用于区分下单，和去支付)
+     */
+    private String orderSn;
 
     /**
      * 购物车id(购物车结算传购物车1，不是购物车，传0)

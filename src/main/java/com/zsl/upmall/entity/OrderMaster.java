@@ -89,6 +89,11 @@ public class OrderMaster extends Model<OrderMaster> {
 
 	@DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
 	@JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone = "GMT+8")
+	/** 支付时间 */
+	private Date payTime;
+
+	@DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+	@JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone = "GMT+8")
 	/** 待收货时间 */
 	private Date waitReceiveTime;
 

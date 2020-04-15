@@ -10,6 +10,12 @@ import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.github.binarywang.wxpay.bean.notify.WxPayNotifyResponse;
+import com.github.binarywang.wxpay.bean.notify.WxPayOrderNotifyResult;
+import com.github.binarywang.wxpay.bean.result.BaseWxPayResult;
+import com.github.binarywang.wxpay.constant.WxPayConstants;
+import com.github.binarywang.wxpay.exception.WxPayException;
+import com.github.binarywang.wxpay.service.WxPayService;
 import com.zsl.upmall.aid.JsonResult;
 import com.zsl.upmall.aid.PageParam;
 import com.zsl.upmall.config.SynQueryDemo;
@@ -31,11 +37,15 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import org.apache.commons.io.IOUtils;
 
 /**
  * <p>自动生成工具：mybatis-dsc-generator</p>
@@ -93,6 +103,7 @@ public class OrderMasterController{
         orderInfo.put("payTime",DateUtil.DateToString( orderMaster.getWaitReceiveTime(),"yyyy-MM-dd HH:mm:ss"));
         orderInfo.put("finishTime",DateUtil.DateToString( orderMaster.getFinishedTime(),"yyyy-MM-dd HH:mm:ss"));
         orderInfo.put("cancelTime",DateUtil.DateToString( orderMaster.getCancelTime(),"yyyy-MM-dd HH:mm:ss"));
+        orderInfo.put("expire_time",orderMaster.getCreateTime().getTime() / 1000 + SystemConfig.ORDER_UNPAID / 1000);
 
         //用户token
         RequestContext requestContext = RequestContextMgr.getLocalContext();
@@ -105,6 +116,7 @@ public class OrderMasterController{
 
         for (OrderDetail orderGoods : orderDetails) {
             SkuDetailVo skuDetailVo = HttpClientUtil.getSkuDetailById(orderGoods.getSkuId(),requestContext.getToken());
+            skuDetailVo.setProductCount(orderGoods.getGoodsCount());
             productDetailList.add(skuDetailVo);
         }
         orderInfo.put("productDetailList",productDetailList);
@@ -128,6 +140,38 @@ public class OrderMasterController{
         Integer userId = requestContext.getUserId();
         if(userId == null){
             return  result.error("用户信息错误");
+        }
+
+        //去支付（）
+        if(StringUtils.isNotBlank(orderInfo.getOrderSn())){
+            QueryWrapper<OrderMaster> toPayOrderQuery = new QueryWrapper<>();
+            toPayOrderQuery.eq("system_order_no",orderInfo.getOrderSn()).eq("hidden",0).last("LIMIT 1");
+            OrderMaster toPayOrder = baseService.getOne(toPayOrderQuery);
+            if(toPayOrder == null){
+                return result.error("订单不存在");
+            }
+            if(toPayOrder.getOrderStatus() - SystemConfig.ORDER_STATUS_WAIT_PAY != 0){
+                return result.error("订单状态错误");
+            }
+            QueryWrapper<OrderDetail> payOrderDetailQuery = new QueryWrapper<>();
+            payOrderDetailQuery.eq("order_id",toPayOrder.getId()).last("LIMIT 1");
+            OrderDetail payOrderDetail = orderDetailService.getOne(payOrderDetailQuery);
+            if(payOrderDetail == null){
+                return  result.error("订单信息错误");
+            }
+            orderInfo.setAddressId(toPayOrder.getAddressId());
+            orderInfo.setCartId(0);
+            orderInfo.setFreight(toPayOrder.getTotalCarriage());
+            orderInfo.setPayWay(toPayOrder.getPayWay());
+            orderInfo.setProductCount(payOrderDetail.getGoodsCount());
+            orderInfo.setShopId(0);
+            orderInfo.setProductId(payOrderDetail.getSkuId());
+            orderInfo.setTotalAmount(toPayOrder.getPracticalPay());
+            //把之前的订单隐藏
+            OrderMaster orderHidden = new OrderMaster();
+            orderHidden.setId(toPayOrder.getId());
+            orderHidden.setHidden(1);
+            baseService.updateById(orderHidden);
         }
 
         if(orderInfo == null){
@@ -216,9 +260,12 @@ public class OrderMasterController{
            orderDetailService.save(orderDetail);
        }
 
-        int addSubStock = HttpClientUtil.skuSubAddStock(skuAddStockVos,requestContext.getToken(),false);
-        if(addSubStock - 0 == 0){
-            return result.error("扣库存失败");
+       //下单才扣库存
+        if(StringUtils.isBlank(orderInfo.getOrderSn())){
+            int addSubStock = HttpClientUtil.skuSubAddStock(skuAddStockVos,requestContext.getToken(),false);
+            if(addSubStock - 0 == 0){
+                return result.error("扣库存失败");
+            }
         }
 
         // 订单支付超期任务
@@ -226,8 +273,6 @@ public class OrderMasterController{
         Map<String ,Object> map = new HashMap<>();
         map.put("orderId",orderId);
         map.put("orderSn",order.getSystemOrderNo());
-        map.put("create_order_time",DateUtil.DateToString( order.getCreateTime(),"yyyy-MM-dd HH:mm:ss"));
-        map.put("expire_time",order.getCreateTime().getTime() / 1000 + 30 * 60);
         return result.success("下单成功",map);
     }
 
@@ -382,31 +427,64 @@ public class OrderMasterController{
 
 
     /**
-     * 去付款(根据订单号)
-     * @param orderSn
-     * @return
+     * 微信付款成功或失败回调接口
+     * 1. 检测当前订单是否是付款状态;
+     * 2. 设置订单付款成功状态相关信息;
+     * 3. 响应微信商户平台.
+     * @param request  请求内容
+     * @param response 响应内容
+     * @return 操作结果
      */
-    @PostMapping("payOrder/{id}")
-    public JsonResult payOrder(@PathVariable("id") String orderSn){
-        QueryWrapper<OrderMaster> orderMasterQueryWrapper = new QueryWrapper();
-        orderMasterQueryWrapper.eq("system_order_no",orderSn).eq("hidden",0).last("LIMIT 1");
-        OrderMaster orderMaster = baseService.getOne(orderMasterQueryWrapper);
-        if(orderMaster == null){
-            return result.success("订单不存在");
+    @PostMapping("pay-notify")
+    public Object payNotify(HttpServletRequest request, HttpServletResponse response){
+        String xmlResult = null;
+        try {
+            xmlResult = IOUtils.toString(request.getInputStream(), request.getCharacterEncoding());
+        } catch (IOException e) {
+            e.printStackTrace();
+            return WxPayNotifyResponse.fail(e.getMessage());
         }
-        if(orderMaster.getOrderStatus() - SystemConfig.ORDER_STATUS_WAIT_PAY != 0){
-            return result.success("订单状态错误");
+
+
+        logger.info("处理腾讯支付平台的订单支付");
+        logger.info(result);
+
+        String orderSn = "";
+        String outTradeNo = "";
+
+        // 分转化成元
+        String totalFee = BaseWxPayResult.fenToYuan(0);
+        QueryWrapper<OrderMaster> orderQuery = new QueryWrapper<>();
+        orderQuery.eq("system_order_no",orderSn).eq("hidden",0).last("LIMIT 1");
+        OrderMaster order = baseService.getOne(orderQuery);
+        if (order == null) {
+            return WxPayNotifyResponse.fail("订单不存在 sn=" + orderSn);
         }
-        // todo 调用支付接口
+
+        // 检查这个订单是否已经处理过
+        if (order.getOrderStatus() - SystemConfig.ORDER_STATUS_WAIT_PAY != 0) {
+            return WxPayNotifyResponse.success("订单已经处理成功!");
+        }
+
+        // 检查支付订单金额
+        if (!totalFee.equals(order.getPracticalPay().toString())) {
+            return WxPayNotifyResponse.fail(order.getSystemOrderNo() + " : 支付金额不符合 totalFee=" + totalFee);
+        }
+
         // 设置订单 待收货
         OrderMaster upOrderReceived = new OrderMaster();
-        upOrderReceived.setId(orderMaster.getId());
+        upOrderReceived.setId(order.getId());
         upOrderReceived.setOrderStatus(SystemConfig.ORDER_STATUS_RECIEVE );
         upOrderReceived.setWaitReceiveTime(new Date());
+        upOrderReceived.setTransactionOrderNo(outTradeNo);
+        upOrderReceived.setPayTime(new Date());
         if (!baseService.updateById(upOrderReceived)) {
             throw new RuntimeException("更新数据已失效");
         }
-        return result.success("付款成功");
+
+        // 取消订单超时未支付任务
+        taskService.removeTask(new OrderUnpaidTask(order.getId()));
+        return WxPayNotifyResponse.success("处理成功!");
     }
 
 
@@ -418,7 +496,7 @@ public class OrderMasterController{
     @GetMapping("getOrderDetailByOrderId/{id}")
     public JsonResult getOrderDetailByOrderId(@PathVariable("id") String orderSn){
         QueryWrapper<OrderMaster> OrderMasterWrapper = new QueryWrapper();
-        OrderMasterWrapper.eq("system_order_no",orderSn).last("LIMIT 1");
+        OrderMasterWrapper.eq("system_order_no",orderSn).eq("hidden",0).last("LIMIT 1");
         OrderMaster orderMaster = baseService.getOne(OrderMasterWrapper);
         if(orderMaster == null ){
             return result.error("订单不存在");
@@ -444,10 +522,11 @@ public class OrderMasterController{
     /**
      * 判断该订单有没有支付（）（订单号, 套餐唯一标识）
      * @param orderSn  订单号
+     * @param sign 套餐唯一标识
      * @return
      */
     @GetMapping("isBuyPackage")
-    public JsonResult isBuyPackage(String orderSn) {
+    public JsonResult isBuyPackage(String orderSn,String sign) {
         QueryWrapper<OrderMaster> orderMasterQueryWrapper = new QueryWrapper();
         orderMasterQueryWrapper.eq("system_order_no",orderSn).eq("hidden",0).last("LIMIT 1");
         OrderMaster orderMaster = baseService.getOne(orderMasterQueryWrapper);
@@ -467,7 +546,7 @@ public class OrderMasterController{
                 return result.error("订单错误",false);
             }else{
                 if(orderDetail.getGoodsCount() - 1 == 0){
-                    return result.success( orderDetail.getGoodsPrice() + "",HttpClientUtil.isPackage(orderDetail.getSkuId()));
+                    return result.success( orderDetail.getGoodsPrice() + "",HttpClientUtil.isPackage(orderDetail.getSkuId(),sign));
                 }
             }
             return result.success("",false);
@@ -496,7 +575,11 @@ public class OrderMasterController{
             try{
                 Logistics logistics = JSON.parseObject(resultTracking,Logistics.class);
                 if(logistics != null && logistics.getStatus() - 200 == 0){
-                    return result.success(logistics.getData());
+                    Map<String ,Object> map = new HashMap<>();
+                    map.put("trackingName",tracking.getTrackingCompanyName());
+                    map.put("trackingNum",orderMaster.getTrackingNumber());
+                    map.put("trackList",logistics.getData());
+                    return result.success(map);
                 }else{
                     if(logistics == null){
                         return result.error("物流信息为空");

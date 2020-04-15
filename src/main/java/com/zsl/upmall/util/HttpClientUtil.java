@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.zsl.upmall.config.SystemConfig;
 import com.zsl.upmall.vo.in.*;
+import com.zsl.upmall.vo.out.UnifiedOrderVo;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -17,7 +18,10 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URI;
@@ -195,8 +199,8 @@ public class HttpClientUtil {
      * @param skuId
      * @return
      */
-    public static boolean isPackage(Integer skuId){
-        String result = doGet(SystemConfig.IS_ORDER_PACKAGE+"?skuId="+skuId);
+    public static boolean isPackage(Integer skuId,String sign){
+        String result = doGet(SystemConfig.IS_ORDER_PACKAGE+"?skuId="+skuId+"&sign="+sign);
         boolean isPack = false;
         try {
             if(StringUtils.isNotBlank(result)){
@@ -212,19 +216,55 @@ public class HttpClientUtil {
     }
 
 
+    /**
+     * 调用微信统一下单接口
+     * @param request
+     * @param openId
+     * @param body
+     * @param orderSn
+     * @param totalFeel
+     * @return
+     */
+    public static UnifiedOrderVo unifiedOrder(HttpServletRequest request, String openId, String body, String orderSn, String totalFeel){
+        JSONObject params = new JSONObject();
+        params.put("source",SystemConfig.SYSTEM_UNIQUE_CODE);
+        params.put("trade_type","JSAPI");
+        params.put("openid",openId);
+        params.put("body",body);
+        params.put("out_trade_no",orderSn);
+        params.put("total_fee",totalFeel);
+        params.put("spbill_create_ip",IpUtil.getRequestIp(request));
+        params.put("business_notify_url",SystemConfig.BUSINESS_NOTIFY_URL);
+        String result = doPostJson(SystemConfig.WEIXIN_UNION_RUL,params.toJSONString(),"");
+        UnifiedOrderVo unifiedResult = null;
+        try {
+            if(StringUtils.isNotBlank(result)){
+                UnifiedOrderVo unifiedOrderVo = JSON.parseObject(result,UnifiedOrderVo.class);
+                if(unifiedOrderVo != null && unifiedOrderVo.getStatusCode() - 200 == 0){
+                    unifiedResult = unifiedOrderVo;
+                }
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return unifiedResult;
+    }
+
+
+
     public static void main(String[] args) {
-          /*SkuDetailVo skuDetailVo = getSkuDetailById(23);
+       /*   SkuDetailVo skuDetailVo = getSkuDetailById(23);
         System.out.println("我的封装结果："+skuDetailVo);*/
-       /* SkuAddStockVo skuAddStockVo = new SkuAddStockVo();
+      /*  SkuAddStockVo skuAddStockVo = new SkuAddStockVo();
         skuAddStockVo.setCount(2);
-        skuAddStockVo.setSkuId(1);
+        skuAddStockVo.setSkuId(28);
         List<SkuAddStockVo> skuAddStockVos = new ArrayList<>();
         skuAddStockVos.add(skuAddStockVo);
         int i = skuSubAddStock(skuAddStockVos,"",false);
         System.out.println("我的封装结果："+ i);*/
       /* AddressInfo addressInfo = getAddressInfoById(5,"92141c1b-db5c-4082-bd36-7cbdf19aa159");
         System.out.println("地址详情："+ addressInfo);*/
-        System.out.println("套餐判断结果："+ isPackage(46));
+       /* System.out.println("套餐判断结果："+ isPackage(46,"AA"));*/
     }
 
 

@@ -20,12 +20,13 @@
 		<id column="order_status" property="orderStatus" />
 		<id column="create_time" property="createTime" />
 		<id column="wait_pay_time" property="waitPayTime" />
+		<id column="pay_time" property="payTime" />
 		<id column="wait_receive_time" property="waitReceiveTime" />
 		<id column="finished_time" property="finishedTime" />
 		<id column="cancel_time" property="cancelTime" />
 	</resultMap>
 	<sql id="Base_Column_List">
-		id, system_order_no, transaction_order_no, pay_way, member_id, address_id, shop_id, total_goods_amout, total_carriage, practical_pay, hidden, remark, tracking_company_id, tracking_number, order_status, create_time, wait_pay_time, wait_receive_time, finished_time, cancel_time
+		id, system_order_no, transaction_order_no, pay_way, member_id, address_id, shop_id, total_goods_amout, total_carriage, practical_pay, hidden, remark, tracking_company_id, tracking_number, order_status, create_time, wait_pay_time, pay_time, wait_receive_time, finished_time, cancel_time
 	</sql>
 
 	<resultMap id="OrderListResultMap" type="com.zsl.upmall.vo.out.OrderListVo">
@@ -34,6 +35,7 @@
 		<id column="orderStatus" property="orderStatus" />
 		<id column="totalAmount" property="totalAmount" />
 		<collection column="orderId" property="orderListProductList" select="getOrderListProductList"></collection>
+		<collection property="totalProductCounts" column="orderId" select="getTotalProductCount"></collection>
 	</resultMap>
 
 
@@ -61,6 +63,7 @@
 		<id column="productName" property="productName" />
 		<id column="productImg" property="productImg" />
 		<id column="productPrice" property="productPrice" />
+		<id column="productSpec" property="productSpec" />
 	</resultMap>
 
 	<select id="getOrderListProductList" resultMap="OrderListProductListMap">
@@ -68,10 +71,20 @@
 			detailO.goods_count productCount,
 		    detailO.goods_name productName,
 			detailO.goods_img productImg,
-			detailO.goods_price productPrice
+			detailO.goods_price productPrice,
+			detailO.goods_spec productSpec
 		FROM
 			order_detail detailO
 		where detailO.order_id = #{orderId}
+	</select>
+
+	<select id="getTotalProductCount" resultType="java.lang.Integer">
+		SELECT
+			count(detailO.goods_count) totalProductCount
+		FROM
+			order_detail detailO
+		WHERE
+			detailO.order_id = #{orderId}
 	</select>
 
 </mapper>

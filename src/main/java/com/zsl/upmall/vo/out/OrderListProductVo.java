@@ -14,4 +14,6 @@ public class OrderListProductVo {
     private Integer productCount;
     /** 商品价格 */
     private BigDecimal productPrice;
+    /** 商品规格 */
+    private String productSpec;
 }
