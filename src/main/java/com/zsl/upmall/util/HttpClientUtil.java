@@ -18,10 +18,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URI;
@@ -218,22 +215,22 @@ public class HttpClientUtil {
 
     /**
      * 调用微信统一下单接口
-     * @param request
+     * @param ip
      * @param openId
      * @param body
      * @param orderSn
      * @param totalFeel
      * @return
      */
-    public static UnifiedOrderVo unifiedOrder(HttpServletRequest request, String openId, String body, String orderSn, String totalFeel){
+    public static UnifiedOrderVo unifiedOrder(String ip, String openId, String body, String orderSn, String totalFeel){
         JSONObject params = new JSONObject();
         params.put("source",SystemConfig.SYSTEM_UNIQUE_CODE);
-        params.put("trade_type","JSAPI");
+        params.put("trade_type","MINIAPP");
         params.put("openid",openId);
         params.put("body",body);
         params.put("out_trade_no",orderSn);
         params.put("total_fee",totalFeel);
-        params.put("spbill_create_ip",IpUtil.getRequestIp(request));
+        params.put("spbill_create_ip",ip);
         params.put("business_notify_url",SystemConfig.BUSINESS_NOTIFY_URL);
         String result = doPostJson(SystemConfig.WEIXIN_UNION_RUL,params.toJSONString(),"");
         UnifiedOrderVo unifiedResult = null;
@@ -251,24 +248,43 @@ public class HttpClientUtil {
     }
 
 
-    public static int updateAddressAndAdd(Integer addressId){
-        
+    /**
+     * 将地址设置成假删除，并且新增一条
+     * @param addressId
+     * @return
+     */
+    public static int updateAddressAndAdd(Integer addressId,String token){
+        String result = doPostJson(SystemConfig.ADDRESS_DELETE_ADD+"/"+addressId,"",token);
+        int i = 0;
+        try {
+            if(StringUtils.isNotBlank(result)){
+                AddressResultVo addressResultVo = JSON.parseObject(result,AddressResultVo.class);
+                if(addressResultVo != null && "100200".equals(addressResultVo.getCode())){
+                    i = 1;
+                }
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return i;
     }
 
 
     public static void main(String[] args) {
        /*   SkuDetailVo skuDetailVo = getSkuDetailById(23);
         System.out.println("我的封装结果："+skuDetailVo);*/
-      /*  SkuAddStockVo skuAddStockVo = new SkuAddStockVo();
+        SkuAddStockVo skuAddStockVo = new SkuAddStockVo();
         skuAddStockVo.setCount(2);
         skuAddStockVo.setSkuId(28);
         List<SkuAddStockVo> skuAddStockVos = new ArrayList<>();
         skuAddStockVos.add(skuAddStockVo);
         int i = skuSubAddStock(skuAddStockVos,"",false);
-        System.out.println("我的封装结果："+ i);*/
+        System.out.println("我的封装结果："+ i);
       /* AddressInfo addressInfo = getAddressInfoById(5,"92141c1b-db5c-4082-bd36-7cbdf19aa159");
         System.out.println("地址详情："+ addressInfo);*/
        /* System.out.println("套餐判断结果："+ isPackage(46,"AA"));*/
+      /*  int i = updateAddressAndAdd(67,"be7614ac-08c1-42e0-bae4-73e20c7a4724");
+        System.out.println("地址结果："+i);*/
     }
 
 

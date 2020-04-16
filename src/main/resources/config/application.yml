@@ -33,9 +33,3 @@ mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
     cache-enabled: false
-
-logging:
-#  level:
-#    root: info #日志配置DEBUG,INFO,WARN,ERROR
-#    com.zsl.upmall: debug
-  path: /data/logs #配置日志生成路径

@@ -23,13 +23,15 @@ public class SystemConfig {
     public final static String SKU_USER_COST_PRICE = "http://upmall.cntracechain.com/common-goods/upMall/userPrice/sku";
     // 获取地址详情
     public final static String ADDRESS_DETAIL = "http://upmall.cntracechain.com/user/userAddress/getById";
+   //将地址设置成假删除，并且新增一条
+   public final static String ADDRESS_DELETE_ADD = "http://upmall.cntracechain.com/user/userAddress/setDeleteAndAdd";
     //套餐判断
     public final  static String IS_ORDER_PACKAGE = "http://upmall.cntracechain.com/common-goods/upMall/uncalibrated/customizedCheck";
 
     //微信统一下单接口
     public final  static String WEIXIN_UNION_RUL = "http://zs-beta.cntracechain.com/baseService/wxpay/unifiedOrder";
     //微信支付回调地址
-    public final  static String BUSINESS_NOTIFY_URL = "http://upmall.cntracechain.com/order/order/getById";
+    public final  static String BUSINESS_NOTIFY_URL = "http://upmall.cntracechain.com/order/order/pay-notify";
     //系统标识
     public final static String SYSTEM_UNIQUE_CODE = "up-mall";
 

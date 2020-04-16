@@ -29,10 +29,10 @@
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-starter-tomcat</artifactId>
                 </exclusion>
-                <exclusion>
+               <!-- <exclusion>
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-starter-logging</artifactId>
-                </exclusion>
+                </exclusion>-->
             </exclusions>
         </dependency>
 
@@ -76,25 +76,11 @@
             <version>4.5.2</version>
         </dependency>
 
-        <!--微信支付-->
-        <dependency>
-            <groupId>com.github.binarywang</groupId>
-            <artifactId>weixin-java-pay</artifactId>
-            <version>3.3.0</version>
-        </dependency>
-
-        <!--微信小程序-->
-        <dependency>
-            <groupId>com.github.binarywang</groupId>
-            <artifactId>weixin-java-miniapp</artifactId>
-            <version>3.3.0</version>
-        </dependency>
-
-      <!--  &lt;!&ndash; 字符串处理&ndash;&gt;
+        <!-- 字符串处理-->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-        </dependency>-->
+        </dependency>
 
         <!--redis-->
         <dependency>
@@ -122,12 +108,6 @@
             <artifactId>mysql-connector-java</artifactId>
             <scope>runtime</scope>
         </dependency>
-
-        <!--集成logstash-->
-       <!-- <dependency>
-            <groupId>net.logstash.logback</groupId>
-            <artifactId>logstash-logback-encoder</artifactId>
-        </dependency>-->
 
         <!--集成druid连接池-->
         <dependency>

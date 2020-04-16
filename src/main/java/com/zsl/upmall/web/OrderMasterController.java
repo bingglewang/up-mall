@@ -10,12 +10,6 @@ import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.github.binarywang.wxpay.bean.notify.WxPayNotifyResponse;
-import com.github.binarywang.wxpay.bean.notify.WxPayOrderNotifyResult;
-import com.github.binarywang.wxpay.bean.result.BaseWxPayResult;
-import com.github.binarywang.wxpay.constant.WxPayConstants;
-import com.github.binarywang.wxpay.exception.WxPayException;
-import com.github.binarywang.wxpay.service.WxPayService;
 import com.zsl.upmall.aid.JsonResult;
 import com.zsl.upmall.aid.PageParam;
 import com.zsl.upmall.config.SynQueryDemo;
@@ -28,24 +22,24 @@ import com.zsl.upmall.task.OrderUnpaidTask;
 import com.zsl.upmall.task.TaskService;
 import com.zsl.upmall.util.DateUtil;
 import com.zsl.upmall.util.HttpClientUtil;
+import com.zsl.upmall.util.IpUtil;
+import com.zsl.upmall.util.MoneyUtil;
 import com.zsl.upmall.vo.in.*;
 import com.zsl.upmall.vo.out.Logistics;
 import com.zsl.upmall.vo.out.OrderListVo;
+import com.zsl.upmall.vo.out.UnifiedOrderVo;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import org.apache.commons.io.IOUtils;
 
 /**
  * <p>自动生成工具：mybatis-dsc-generator</p>
@@ -59,7 +53,7 @@ import org.apache.commons.io.IOUtils;
 @RestController
 @RequestMapping("/order")
 public class OrderMasterController{
-    private final Log logger = LogFactory.getLog(OrderMasterController.class);
+    private final Logger logger = LoggerFactory.getLogger(OrderMasterController.class);
 
     @Autowired
     protected OrderMasterService baseService;
@@ -134,7 +128,7 @@ public class OrderMasterController{
      * @time    2019年10月16日
      */
     @PostMapping("/createOrder")
-    public JsonResult createOrder(@Valid @RequestBody CreateOrderVo orderInfo){
+    public JsonResult createOrder(@RequestBody CreateOrderVo orderInfo,HttpServletRequest request){
         //获取用户 userId
         RequestContext requestContext = RequestContextMgr.getLocalContext();
         Integer userId = requestContext.getUserId();
@@ -228,7 +222,11 @@ public class OrderMasterController{
         order.setOrderStatus(SystemConfig.ORDER_STATUS_WAIT_PAY);
         order.setWaitPayTime(new Date());
         //订单号
-        order.setSystemOrderNo(generateOrderSn(userId));
+        if(StringUtils.isNotBlank(orderInfo.getOrderSn())){
+            order.setSystemOrderNo(orderInfo.getOrderSn());
+        }else{
+            order.setSystemOrderNo(generateOrderSn(userId));
+        }
         boolean isSaveSuccess = baseService.save(order);
         if(!isSaveSuccess){
             return result.error("下单失败");
@@ -270,15 +268,25 @@ public class OrderMasterController{
                 baseService.updateById(updateHidden);
                 return result.error("扣库存失败");
             }
+            // 订单地址处理
+            int updateAddreResult = HttpClientUtil.updateAddressAndAdd(addressInfo.getId(),requestContext.getToken());
+            logger.info("订单模块：{{"+order.getSystemOrderNo()+"}}的地址处理结果=====》》》"+updateAddreResult);
         }
 
-        // 订单地址处理
+        // 将元转分
+        String totalFee = MoneyUtil.moneyYuan2FenStr(order.getPracticalPay());
+        UnifiedOrderVo unifiedOrderVo =  HttpClientUtil.unifiedOrder(IpUtil.getRequestIp(request),orderInfo.getOpenid(),"up-mall商品支付",order.getSystemOrderNo(),totalFee);
+        logger.info("订单模块：{{"+order.getSystemOrderNo()+"}}的微信统一下单结果=====》》》"+unifiedOrderVo);
+        if(unifiedOrderVo == null){
+            return result.error("微信统一下单失败");
+        }
 
         // 订单支付超期任务
         taskService.addTask(new OrderUnpaidTask(orderId));
         Map<String ,Object> map = new HashMap<>();
         map.put("orderId",orderId);
         map.put("orderSn",order.getSystemOrderNo());
+        map.put("unifiedData",unifiedOrderVo.getData());
         return result.success("下单成功",map);
     }
 
@@ -434,47 +442,29 @@ public class OrderMasterController{
 
     /**
      * 微信付款成功或失败回调接口
-     * 1. 检测当前订单是否是付款状态;
-     * 2. 设置订单付款成功状态相关信息;
-     * 3. 响应微信商户平台.
-     * @param request  请求内容
-     * @param response 响应内容
      * @return 操作结果
      */
     @PostMapping("pay-notify")
-    public Object payNotify(HttpServletRequest request, HttpServletResponse response){
-        String xmlResult = null;
-        try {
-            xmlResult = IOUtils.toString(request.getInputStream(), request.getCharacterEncoding());
-        } catch (IOException e) {
-            e.printStackTrace();
-            return WxPayNotifyResponse.fail(e.getMessage());
+    public Object payNotify(@RequestBody PayNotifyVo payNotifyVo){
+        logger.info("回调结果===>"+payNotifyVo);
+        if(!"success".equals(payNotifyVo.getResult())){
+           return result.error("支付失败");
         }
 
+        String orderSn = payNotifyVo.getOut_trade_no();
+        String outTradeNo = payNotifyVo.getTransaction_id();
 
-        logger.info("处理腾讯支付平台的订单支付");
-        logger.info(result);
 
-        String orderSn = "";
-        String outTradeNo = "";
-
-        // 分转化成元
-        String totalFee = BaseWxPayResult.fenToYuan(0);
         QueryWrapper<OrderMaster> orderQuery = new QueryWrapper<>();
         orderQuery.eq("system_order_no",orderSn).eq("hidden",0).last("LIMIT 1");
         OrderMaster order = baseService.getOne(orderQuery);
         if (order == null) {
-            return WxPayNotifyResponse.fail("订单不存在 sn=" + orderSn);
+            return result.error("订单不存在 sn=" + orderSn);
         }
 
         // 检查这个订单是否已经处理过
         if (order.getOrderStatus() - SystemConfig.ORDER_STATUS_WAIT_PAY != 0) {
-            return WxPayNotifyResponse.success("订单已经处理成功!");
-        }
-
-        // 检查支付订单金额
-        if (!totalFee.equals(order.getPracticalPay().toString())) {
-            return WxPayNotifyResponse.fail(order.getSystemOrderNo() + " : 支付金额不符合 totalFee=" + totalFee);
+            return result.success("订单已经处理成功!");
         }
 
         // 设置订单 待收货
@@ -490,7 +480,7 @@ public class OrderMasterController{
 
         // 取消订单超时未支付任务
         taskService.removeTask(new OrderUnpaidTask(order.getId()));
-        return WxPayNotifyResponse.success("处理成功!");
+        return result.success("处理成功!");
     }
 
 

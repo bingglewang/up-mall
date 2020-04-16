@@ -13,13 +13,13 @@ public class UnifiedOrderVo {
 
 @Data
 class UnifiedData{
-    private String nonce_str;
     private String appid;
+    private String partnerid;
+    private String prepayid;
+    private String packageValue;
+    private String noncestr;
+    private String timestamp;
+    private String signType;
     private String sign;
-    private String err_code;
-    private String return_msg;
-    private String result_code;
-    private String err_code_des;
-    private String mch_id;
-    private String return_code;
+    private String payUrl;
 }

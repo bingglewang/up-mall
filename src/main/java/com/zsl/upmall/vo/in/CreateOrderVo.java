@@ -16,6 +16,11 @@ public class CreateOrderVo {
     private Integer addressId;
 
     /**
+     * 微信openid
+     */
+    private String openid;
+
+    /**
      * 订单号(用于区分下单，和去支付)
      */
     private String orderSn;
