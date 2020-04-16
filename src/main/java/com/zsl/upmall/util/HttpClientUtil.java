@@ -251,6 +251,10 @@ public class HttpClientUtil {
     }
 
 
+    public static int updateAddressAndAdd(Integer addressId){
+        
+    }
+
 
     public static void main(String[] args) {
        /*   SkuDetailVo skuDetailVo = getSkuDetailById(23);

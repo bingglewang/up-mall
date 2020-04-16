@@ -264,9 +264,15 @@ public class OrderMasterController{
         if(StringUtils.isBlank(orderInfo.getOrderSn())){
             int addSubStock = HttpClientUtil.skuSubAddStock(skuAddStockVos,requestContext.getToken(),false);
             if(addSubStock - 0 == 0){
+                OrderMaster updateHidden = new OrderMaster();
+                updateHidden.setId(order.getId());
+                updateHidden.setHidden(1);
+                baseService.updateById(updateHidden);
                 return result.error("扣库存失败");
             }
         }
+
+        // 订单地址处理
 
         // 订单支付超期任务
         taskService.addTask(new OrderUnpaidTask(orderId));
