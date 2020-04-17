@@ -62,6 +62,9 @@ public class OrderMasterController{
     private OrderDetailService orderDetailService;
 
     @Autowired
+    private UserAddressService addressService;
+
+    @Autowired
     private TaskService taskService;
 
     @Autowired
@@ -283,7 +286,7 @@ public class OrderMasterController{
                 return result.error("扣库存失败");
             }
             // 订单地址处理
-            int updateAddreResult = HttpClientUtil.updateAddressAndAdd(orderInfo.getAddressId(),requestContext.getToken());
+            JsonResult updateAddreResult = setDeleteAndAdd(orderInfo.getAddressId());
             logger.info("订单模块：{{"+order.getSystemOrderNo()+"}}的地址处理结果=====》》》"+updateAddreResult);
         }
 
@@ -340,6 +343,32 @@ public class OrderMasterController{
         }
         return sb.toString();
     }
+
+    /**
+     * 将原来地址设置为假删除，并新增 一条一模一样的
+     * @param addressId
+     * @return
+     */
+    public JsonResult setDeleteAndAdd(Integer addressId){
+        UserAddress userAddress = addressService.getById(addressId);
+        if(userAddress == null){
+            return result.error("地址不存在");
+        }
+        //设置为加删除
+        UserAddress setDelete = new UserAddress();
+        setDelete.setId(userAddress.getId());
+        setDelete.setIsDelete(1);
+        if(!addressService.updateById(setDelete)){
+            return result.error("修改失败");
+        }
+        //新增一条一模一样的
+        if(!addressService.save(userAddress)){
+            return result.error("修改失败");
+        }
+        return result.success("修改成功");
+    }
+
+
 
     /**
      * @explain 订单列表

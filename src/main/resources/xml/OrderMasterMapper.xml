@@ -88,8 +88,23 @@
 			detailO.order_id = #{orderId}
 	</select>
 
+
+
+	<resultMap id="skuResultMap" type="com.zsl.upmall.vo.in.SkuDetailVo">
+		<id column="skuId" property="skuId" />
+		<id column="spuId" property="spuId" />
+		<id column="skuName" property="skuName" />
+		<id column="spuName" property="spuName" />
+		<id column="retailPrice" property="skuPrice" />
+		<id column="salesVolume" property="salesVolume" />
+		<id column="stock" property="stock" />
+		<id column="status" property="status" />
+		<id column="skuImage" property="skuImage" />
+		<id column="spec" property="spec" />
+	</resultMap>
+
 	<!--sku详情-->
-	<select id="getSkuDetail" resultType="com.zsl.upmall.vo.in.SkuDetailVo">
+	<select id="getSkuDetail" resultMap="skuResultMap">
 		SELECT
 		   sku.id skuId,
 		   sku.spu_id spuId,
