@@ -70,7 +70,7 @@ public class OrderUnpaidTask extends Task {
             skuAddStockVo.setSkuId(orderGoods.getSkuId());
             skuAddStockVos.add(skuAddStockVo);
         }
-        int addSubStock = HttpClientUtil.skuSubAddStock(skuAddStockVos,"",true);
+        int addSubStock = orderService.addAndSubSkuStock(skuAddStockVos,true);
         if(addSubStock - 0 == 0){
             throw new RuntimeException("商品货品库存增加失败");
         }

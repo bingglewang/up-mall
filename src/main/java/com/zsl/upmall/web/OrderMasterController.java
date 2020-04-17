@@ -109,8 +109,13 @@ public class OrderMasterController{
         List<OrderDetail> orderDetails = orderDetailService.list(orderDetailWrapper);
 
         for (OrderDetail orderGoods : orderDetails) {
-            SkuDetailVo skuDetailVo = HttpClientUtil.getSkuDetailById(orderGoods.getSkuId(),requestContext.getToken());
+            SkuDetailVo skuDetailVo = new SkuDetailVo();
+            skuDetailVo.setSkuPrice(orderGoods.getGoodsPrice());
             skuDetailVo.setProductCount(orderGoods.getGoodsCount());
+            skuDetailVo.setSkuImage(orderGoods.getGoodsImg());
+            skuDetailVo.setSkuName(orderGoods.getGoodsName());
+            skuDetailVo.setSpec(orderGoods.getGoodsSpec());
+            skuDetailVo.setSkuId(orderGoods.getSkuId());
             productDetailList.add(skuDetailVo);
         }
         orderInfo.put("productDetailList",productDetailList);
@@ -129,6 +134,7 @@ public class OrderMasterController{
      */
     @PostMapping("/createOrder")
     public JsonResult createOrder(@RequestBody CreateOrderVo orderInfo,HttpServletRequest request){
+        long startTime = System.currentTimeMillis();
         //获取用户 userId
         RequestContext requestContext = RequestContextMgr.getLocalContext();
         Integer userId = requestContext.getUserId();
@@ -137,10 +143,11 @@ public class OrderMasterController{
         }
 
         //去支付（）
+        OrderMaster toPayOrder = null;
         if(StringUtils.isNotBlank(orderInfo.getOrderSn())){
             QueryWrapper<OrderMaster> toPayOrderQuery = new QueryWrapper<>();
             toPayOrderQuery.eq("system_order_no",orderInfo.getOrderSn()).eq("hidden",0).last("LIMIT 1");
-            OrderMaster toPayOrder = baseService.getOne(toPayOrderQuery);
+            toPayOrder = baseService.getOne(toPayOrderQuery);
             if(toPayOrder == null){
                 return result.error("订单不存在");
             }
@@ -177,19 +184,23 @@ public class OrderMasterController{
         }
 
         // 收货地址
-        AddressInfo addressInfo = HttpClientUtil.getAddressInfoById(orderInfo.getAddressId(),requestContext.getToken());
-        if (addressInfo == null) {
+       // AddressInfo addressInfo = HttpClientUtil.getAddressInfoById(orderInfo.getAddressId(),requestContext.getToken());
+        if (orderInfo.getAddressId() == null) {
             return result.error("地址不存在");
         }
 
         // 商品价格
         List<OrderProductVo> orderProductVoList = new ArrayList<>();
+        SkuDetailVo sku = null;
         if (orderInfo.getCartId().equals(0)) {
 
             // 普通
-            SkuDetailVo sku = HttpClientUtil.getSkuDetailById(orderInfo.getProductId(),requestContext.getToken());
+            sku = baseService.getSkuDetail(orderInfo.getProductId());
             if(sku == null || !sku.getStatus()){
                 return result.error("商品不存在或已下架");
+            }
+            if(sku.getStock() - orderInfo.getProductCount() < 0){
+                return  result.error("库存不足");
             }
             //需要支付得 价格
             BigDecimal needTotalPrice = sku.getSkuPrice().multiply(new BigDecimal(orderInfo.getProductCount())).add(orderInfo.getFreight());
@@ -218,14 +229,16 @@ public class OrderMasterController{
         order.setShopId(0);
         order.setTotalGoodsAmout(orderInfo.getTotalAmount().subtract(orderInfo.getFreight()));
         //订单状态 待付款(状态)
-        order.setCreateTime(new Date());
         order.setOrderStatus(SystemConfig.ORDER_STATUS_WAIT_PAY);
-        order.setWaitPayTime(new Date());
         //订单号
         if(StringUtils.isNotBlank(orderInfo.getOrderSn())){
             order.setSystemOrderNo(orderInfo.getOrderSn());
+            order.setCreateTime(toPayOrder.getCreateTime());
+            order.setWaitPayTime(toPayOrder.getWaitPayTime());
         }else{
             order.setSystemOrderNo(generateOrderSn(userId));
+            order.setCreateTime(new Date());
+            order.setWaitPayTime(new Date());
         }
         boolean isSaveSuccess = baseService.save(order);
         if(!isSaveSuccess){
@@ -238,6 +251,7 @@ public class OrderMasterController{
         List<SkuAddStockVo> skuAddStockVos = new ArrayList<>();
         //订单详情
        for(OrderProductVo orderProductVo : orderProductVoList){
+           //判断库存是否足够
            SkuAddStockVo skuAddStockVo = new SkuAddStockVo();
            skuAddStockVo.setCount(orderProductVo.getProductCount());
            skuAddStockVo.setSkuId(orderProductVo.getSkuId());
@@ -260,7 +274,7 @@ public class OrderMasterController{
 
        //下单才扣库存
         if(StringUtils.isBlank(orderInfo.getOrderSn())){
-            int addSubStock = HttpClientUtil.skuSubAddStock(skuAddStockVos,requestContext.getToken(),false);
+            int addSubStock = baseService.addAndSubSkuStock(skuAddStockVos,false);
             if(addSubStock - 0 == 0){
                 OrderMaster updateHidden = new OrderMaster();
                 updateHidden.setId(order.getId());
@@ -269,17 +283,20 @@ public class OrderMasterController{
                 return result.error("扣库存失败");
             }
             // 订单地址处理
-            int updateAddreResult = HttpClientUtil.updateAddressAndAdd(addressInfo.getId(),requestContext.getToken());
+            int updateAddreResult = HttpClientUtil.updateAddressAndAdd(orderInfo.getAddressId(),requestContext.getToken());
             logger.info("订单模块：{{"+order.getSystemOrderNo()+"}}的地址处理结果=====》》》"+updateAddreResult);
         }
 
         // 将元转分
+        long startUnifiedTime = System.currentTimeMillis();
         String totalFee = MoneyUtil.moneyYuan2FenStr(order.getPracticalPay());
         UnifiedOrderVo unifiedOrderVo =  HttpClientUtil.unifiedOrder(IpUtil.getRequestIp(request),orderInfo.getOpenid(),"up-mall商品支付",order.getSystemOrderNo(),totalFee);
         logger.info("订单模块：{{"+order.getSystemOrderNo()+"}}的微信统一下单结果=====》》》"+unifiedOrderVo);
         if(unifiedOrderVo == null){
             return result.error("微信统一下单失败");
         }
+        logger.info("统一下单语句执行时间=========【【【 "+ (System.currentTimeMillis() - startUnifiedTime)/1000 +" 】】】秒");
+
 
         // 订单支付超期任务
         taskService.addTask(new OrderUnpaidTask(orderId));
@@ -287,6 +304,7 @@ public class OrderMasterController{
         map.put("orderId",orderId);
         map.put("orderSn",order.getSystemOrderNo());
         map.put("unifiedData",unifiedOrderVo.getData());
+        logger.info("总下单模块执行时间=========【【【 "+ (System.currentTimeMillis() - startTime)/1000 +" 】】】秒");
         return result.success("下单成功",map);
     }
 

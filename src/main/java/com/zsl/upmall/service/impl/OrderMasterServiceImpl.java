@@ -10,9 +10,13 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.zsl.upmall.entity.OrderMaster;
 import com.zsl.upmall.mapper.OrderMasterDao;
 import com.zsl.upmall.service.OrderMasterService;
+import com.zsl.upmall.vo.in.SkuAddStockVo;
+import com.zsl.upmall.vo.in.SkuDetailVo;
 import com.zsl.upmall.vo.out.OrderListVo;
 import org.springframework.stereotype.Service;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+
+import java.util.List;
 
 /**   
  * @Description:订单(服务实现)
@@ -27,5 +31,28 @@ public class OrderMasterServiceImpl  extends ServiceImpl<OrderMasterDao, OrderMa
     @Override
     public IPage<OrderListVo> getOrderListByStatus(IPage<OrderListVo> page, Integer orderStatus, Integer userId) {
         return this.baseMapper.getOrderListByStatus(page,orderStatus,userId);
+    }
+
+    /**
+     * 根据skuId 获取sku详情
+     *
+     * @param skuId
+     * @return
+     */
+    @Override
+    public SkuDetailVo getSkuDetail(Integer skuId) {
+        return this.baseMapper.getSkuDetail(skuId);
+    }
+
+    /**
+     * 扣减库存
+     *
+     * @param list
+     * @param action
+     * @return
+     */
+    @Override
+    public int addAndSubSkuStock(List<SkuAddStockVo> list, boolean action) {
+        return this.baseMapper.addAndSubSkuStock(list,action);
     }
 }
