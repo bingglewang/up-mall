@@ -7,8 +7,10 @@
 package com.zsl.upmall.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.zsl.upmall.vo.in.AddressInfo;
 import org.apache.ibatis.annotations.Mapper;
 import com.zsl.upmall.entity.UserAddress;
+import org.apache.ibatis.annotations.Param;
 
 /**   
  * @Description:TODO(用户和代理商数据访问层)
@@ -19,5 +21,5 @@ import com.zsl.upmall.entity.UserAddress;
  */
 @Mapper
 public interface UserAddressDao extends BaseMapper<UserAddress> {
-	
+    AddressInfo addressInfo(@Param("id") Long addressId);
 }

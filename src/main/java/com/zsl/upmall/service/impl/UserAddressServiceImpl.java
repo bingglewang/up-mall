@@ -9,6 +9,7 @@ package com.zsl.upmall.service.impl;
 import com.zsl.upmall.entity.UserAddress;
 import com.zsl.upmall.mapper.UserAddressDao;
 import com.zsl.upmall.service.UserAddressService;
+import com.zsl.upmall.vo.in.AddressInfo;
 import org.springframework.stereotype.Service;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 
@@ -21,5 +22,8 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
  */
 @Service
 public class UserAddressServiceImpl  extends ServiceImpl<UserAddressDao, UserAddress> implements UserAddressService  {
-	
+    @Override
+    public AddressInfo addressInfo(Long addressId){
+        return this.baseMapper.addressInfo(addressId);
+    }
 }

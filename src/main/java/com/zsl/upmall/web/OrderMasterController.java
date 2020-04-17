@@ -102,9 +102,6 @@ public class OrderMasterController{
         orderInfo.put("cancelTime",DateUtil.DateToString( orderMaster.getCancelTime(),"yyyy-MM-dd HH:mm:ss"));
         orderInfo.put("expire_time",orderMaster.getCreateTime().getTime() / 1000 + SystemConfig.ORDER_UNPAID / 1000);
 
-        //用户token
-        RequestContext requestContext = RequestContextMgr.getLocalContext();
-
         //订单商品列表
         List<SkuDetailVo> productDetailList = new ArrayList<>();
         QueryWrapper orderDetailWrapper = new QueryWrapper();
@@ -123,7 +120,7 @@ public class OrderMasterController{
         }
         orderInfo.put("productDetailList",productDetailList);
         //订单地址信息
-        AddressInfo addressInfo = HttpClientUtil.getAddressInfoById(orderMaster.getAddressId(),requestContext.getToken());
+        AddressInfo addressInfo = addressService.addressInfo(new Long(orderMaster.getAddressId()));
         orderInfo.put("addressInfo",addressInfo);
         return result.success(orderInfo);
     }
