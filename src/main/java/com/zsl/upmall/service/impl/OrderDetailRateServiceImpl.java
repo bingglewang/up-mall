@@ -21,5 +21,4 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
  */
 @Service
 public class OrderDetailRateServiceImpl  extends ServiceImpl<OrderDetailRateDao, OrderDetailRate> implements OrderDetailRateService  {
-	
 }

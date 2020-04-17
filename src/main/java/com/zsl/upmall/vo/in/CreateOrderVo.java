@@ -21,6 +21,12 @@ public class CreateOrderVo {
     private String openid;
 
     /**
+     * 套餐标识
+     */
+    private String comboLevel;
+
+
+    /**
      * 订单号(用于区分下单，和去支付)
      */
     private String orderSn;

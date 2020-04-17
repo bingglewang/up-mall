@@ -15,19 +15,22 @@ public class SystemConfig {
     // 订单状态（ 已取消）
     public final static Integer ORDER_STATUS_CANCLE = 3;
 
-    //sku 详情接口路径
+    //sku 详情接口路径 (sql代替)
     public final static String SKU_DETAIL_URL = "http://upmall.cntracechain.com/common-goods/common/skuDetail";
-    // 扣减库存
+    // 扣减库存  (sql代替)
     public final static String SKU_SUB_ADD_STOCK = "http://upmall.cntracechain.com/common-goods/common/skuSell";
-    // 获取 SKU用户售价
+    // 获取 SKU用户售价  (sql代替)
     public final static String SKU_USER_COST_PRICE = "http://upmall.cntracechain.com/common-goods/upMall/userPrice/sku";
-    // 获取地址详情
+    // 获取地址详情  (sql代替)
     public final static String ADDRESS_DETAIL = "http://upmall.cntracechain.com/user/userAddress/getById";
-   //将地址设置成假删除，并且新增一条
+   //将地址设置成假删除，并且新增一条  (sql代替)
    public final static String ADDRESS_DELETE_ADD = "http://upmall.cntracechain.com/user/userAddress/setDeleteAndAdd";
+
+
+   //会员邀请及普通消费返利
+   public final static String MEMBER_INVITEREBATE_URL = "http://upmall.cntracechain.com/up_mall_rebate/rebate/inviteRebate";
     //套餐判断
     public final  static String IS_ORDER_PACKAGE = "http://upmall.cntracechain.com/common-goods/upMall/uncalibrated/customizedCheck";
-
     //微信统一下单接口
     public final  static String WEIXIN_UNION_RUL = "http://zs-beta.cntracechain.com/baseService/wxpay/unifiedOrder";
     //微信支付回调地址

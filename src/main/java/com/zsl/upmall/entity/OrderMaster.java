@@ -50,6 +50,9 @@ public class OrderMaster extends Model<OrderMaster> {
 	/** 配送地址（用户如修改已下单的地址，原地址置为删除状态，再新增新地址） */
 	private Integer addressId;
 
+	/** 套餐标识 */
+	private String comboLevel;
+
 	/** 商家id */
 	private Integer shopId;
 

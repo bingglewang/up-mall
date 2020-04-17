@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -270,16 +271,44 @@ public class HttpClientUtil {
     }
 
 
+    /**
+     * 会员邀请及普通消费返利
+     * @param memberId
+     * @param orderNo
+     * @return
+     */
+    public static InviteRebateVo inviteRebate(Integer memberId,String orderNo,String token){
+        JSONObject params = new JSONObject();
+        params.put("memberId",memberId);
+        params.put("orderNo",orderNo);
+        String result = doPostJson(SystemConfig.MEMBER_INVITEREBATE_URL,params.toJSONString(),token);
+        InviteRebateVo inviteResult = null;
+        try {
+            if(StringUtils.isNotBlank(result)){
+                InviteRebateVo inviteRebateVo = JSON.parseObject(result,InviteRebateVo.class);
+                if(inviteRebateVo != null &&  inviteRebateVo.getCode() - 500200 == 0){
+                    inviteResult = inviteRebateVo;
+                }
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return inviteResult;
+    }
+
+
     public static void main(String[] args) {
+      /*  InviteRebateVo inviteRebateVo =  inviteRebate(5,"20200416108383");*/
+        //System.out.println("会员返利结果："+inviteRebateVo);
        /*   SkuDetailVo skuDetailVo = getSkuDetailById(23);
         System.out.println("我的封装结果："+skuDetailVo);*/
-        SkuAddStockVo skuAddStockVo = new SkuAddStockVo();
+       /* SkuAddStockVo skuAddStockVo = new SkuAddStockVo();
         skuAddStockVo.setCount(2);
         skuAddStockVo.setSkuId(28);
         List<SkuAddStockVo> skuAddStockVos = new ArrayList<>();
         skuAddStockVos.add(skuAddStockVo);
         int i = skuSubAddStock(skuAddStockVos,"",false);
-        System.out.println("我的封装结果："+ i);
+        System.out.println("我的封装结果："+ i);*/
       /* AddressInfo addressInfo = getAddressInfoById(5,"92141c1b-db5c-4082-bd36-7cbdf19aa159");
         System.out.println("地址详情："+ addressInfo);*/
        /* System.out.println("套餐判断结果："+ isPackage(46,"AA"));*/

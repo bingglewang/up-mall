@@ -17,6 +17,8 @@ public class OrderListVo {
     private Integer orderId;
     /** 订单商品列表 */
     private List<OrderListProductVo> orderListProductList;
+    /** 套餐标识 */
+    private String comboLevel;
     /** 商品总共数量 */
     private Integer totalProductCounts;
 }

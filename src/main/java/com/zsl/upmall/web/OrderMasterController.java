@@ -65,6 +65,9 @@ public class OrderMasterController{
     private UserAddressService addressService;
 
     @Autowired
+    private RedisService redisService;
+
+    @Autowired
     private TaskService taskService;
 
     @Autowired
@@ -91,6 +94,7 @@ public class OrderMasterController{
         orderInfo.put("orderSn", orderMaster.getSystemOrderNo());
         orderInfo.put("traceNo",orderMaster.getTransactionOrderNo());
         orderInfo.put("payWay","在线支付");
+        orderInfo.put("comboLevel",orderMaster.getComboLevel());
         orderInfo.put("goodsAmount",orderMaster.getTotalGoodsAmout());
         orderInfo.put("actualPrice",orderMaster.getPracticalPay());
         orderInfo.put("freightPrice",orderMaster.getTotalCarriage());
@@ -166,6 +170,7 @@ public class OrderMasterController{
             orderInfo.setPayWay(toPayOrder.getPayWay());
             orderInfo.setProductCount(payOrderDetail.getGoodsCount());
             orderInfo.setShopId(0);
+            orderInfo.setComboLevel(toPayOrder.getComboLevel());
             orderInfo.setProductId(payOrderDetail.getSkuId());
             orderInfo.setTotalAmount(toPayOrder.getPracticalPay());
             //把之前的订单隐藏
@@ -229,6 +234,7 @@ public class OrderMasterController{
         order.setHidden(0);
         order.setMemberId(userId);
         order.setPayWay(orderInfo.getPayWay());
+        order.setComboLevel(orderInfo.getComboLevel());
         order.setPracticalPay(actualPrice);
         order.setTotalCarriage(orderInfo.getFreight());
         order.setShopId(0);
@@ -429,7 +435,16 @@ public class OrderMasterController{
         if (!baseService.updateById(updateStatus)) {
             throw new RuntimeException("确认收货失败");
         }
-        // todo 用户冻结积分，冻结余额操作
+
+        RequestContext requestContext = RequestContextMgr.getLocalContext();
+
+        //  用户冻结积分，冻结余额操作
+        InviteRebateVo inviteRebateVo = HttpClientUtil.inviteRebate(requestContext.getUserId(),orderMaster.getSystemOrderNo(),requestContext.getToken());
+        if(inviteRebateVo != null){
+            // todo
+          /*  String prefix_key = "freezeAssetIds_" + "20200411370797";
+            String inviteResult = (String)redisService.get(prefix_key);*/
+        }
         return result.success("确认收货成功");
     }
 
@@ -480,7 +495,7 @@ public class OrderMasterController{
             skuAddStockVo.setSkuId(orderGoods.getSkuId());
             skuAddStockVos.add(skuAddStockVo);
         }
-        int addSubStock = HttpClientUtil.skuSubAddStock(skuAddStockVos,requestContext.getToken(),true);
+        int addSubStock = baseService.addAndSubSkuStock(skuAddStockVos,true);
         if(addSubStock - 0 == 0){
             return result.error("扣库存失败");
         }

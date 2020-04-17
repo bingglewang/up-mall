@@ -9,6 +9,7 @@
 		<id column="pay_way" property="payWay" />
 		<id column="member_id" property="memberId" />
 		<id column="address_id" property="addressId" />
+		<id column="combo_level" property="comboLevel" />
 		<id column="shop_id" property="shopId" />
 		<id column="total_goods_amout" property="totalGoodsAmout" />
 		<id column="total_carriage" property="totalCarriage" />
@@ -26,7 +27,7 @@
 		<id column="cancel_time" property="cancelTime" />
 	</resultMap>
 	<sql id="Base_Column_List">
-		id, system_order_no, transaction_order_no, pay_way, member_id, address_id, shop_id, total_goods_amout, total_carriage, practical_pay, hidden, remark, tracking_company_id, tracking_number, order_status, create_time, wait_pay_time, pay_time, wait_receive_time, finished_time, cancel_time
+		id, system_order_no, transaction_order_no, pay_way, member_id, address_id,combo_level, shop_id, total_goods_amout, total_carriage, practical_pay, hidden, remark, tracking_company_id, tracking_number, order_status, create_time, wait_pay_time, pay_time, wait_receive_time, finished_time, cancel_time
 	</sql>
 
 	<resultMap id="OrderListResultMap" type="com.zsl.upmall.vo.out.OrderListVo">
@@ -34,6 +35,7 @@
 		<id column="orderSn" property="orderSn" />
 		<id column="orderStatus" property="orderStatus" />
 		<id column="totalAmount" property="totalAmount" />
+		<id column="comboLevel" property="comboLevel" />
 		<collection column="orderId" property="orderListProductList" select="getOrderListProductList"></collection>
 		<collection property="totalProductCounts" column="orderId" select="getTotalProductCount"></collection>
 	</resultMap>
@@ -45,7 +47,8 @@
 			orderM.member_id userId,
 			orderM.system_order_no orderSn,
 			orderM.practical_pay totalAmount,
-		    orderM.order_status orderStatus
+		    orderM.order_status orderStatus,
+		    orderM.combo_level comboLevel
 		FROM
 			order_master orderM
 		WHERE
