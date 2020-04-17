@@ -16,6 +16,7 @@ import com.zsl.upmall.vo.out.OrderListVo;
 import org.springframework.stereotype.Service;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**   
@@ -54,5 +55,17 @@ public class OrderMasterServiceImpl  extends ServiceImpl<OrderMasterDao, OrderMa
     @Override
     public int addAndSubSkuStock(List<SkuAddStockVo> list, boolean action) {
         return this.baseMapper.addAndSubSkuStock(list,action);
+    }
+
+    /**
+     * 获取sku价格
+     *
+     * @param userId
+     * @param skuId
+     * @return
+     */
+    @Override
+    public BigDecimal getSkuPriceByUserLevel(Integer userId, Integer skuId) {
+        return this.baseMapper.getSkuPriceByUserLevel(userId,skuId);
     }
 }

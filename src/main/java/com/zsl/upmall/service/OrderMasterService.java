@@ -14,6 +14,7 @@ import com.zsl.upmall.vo.in.SkuDetailVo;
 import com.zsl.upmall.vo.out.OrderListVo;
 import org.apache.ibatis.annotations.Param;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -39,4 +40,12 @@ public interface OrderMasterService extends IService<OrderMaster> {
      * @return
      */
     int addAndSubSkuStock(List<SkuAddStockVo> list, boolean action);
+
+    /**
+     * 获取sku价格
+     * @param userId
+     * @param skuId
+     * @return
+     */
+    BigDecimal getSkuPriceByUserLevel(Integer userId,Integer skuId);
 }

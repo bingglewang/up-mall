@@ -15,6 +15,7 @@ import org.apache.ibatis.annotations.Mapper;
 import com.zsl.upmall.entity.OrderMaster;
 import org.apache.ibatis.annotations.Param;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**   
@@ -43,4 +44,12 @@ public interface OrderMasterDao extends BaseMapper<OrderMaster> {
      * @return
      */
     int addAndSubSkuStock(@Param("list")List<SkuAddStockVo> list,@Param("action") boolean action);
+
+    /**
+     * 获取sku价格
+     * @param userId
+     * @param skuId
+     * @return
+     */
+    BigDecimal getSkuPriceByUserLevel(@Param("userId") Integer userId,@Param("skuId") Integer skuId);
 }

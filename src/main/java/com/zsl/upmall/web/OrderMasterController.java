@@ -205,6 +205,11 @@ public class OrderMasterController{
             if(sku.getStock() - orderInfo.getProductCount() < 0){
                 return  result.error("库存不足");
             }
+            BigDecimal skuPrice = baseService.getSkuPriceByUserLevel(userId,sku.getSkuId());
+            if(skuPrice == null){
+                return result.error("价格错误");
+            }
+            sku.setSkuPrice(skuPrice);
             //需要支付得 价格
             BigDecimal needTotalPrice = sku.getSkuPrice().multiply(new BigDecimal(orderInfo.getProductCount())).add(orderInfo.getFreight());
             if(needTotalPrice.compareTo(orderInfo.getTotalAmount()) != 0){
