@@ -4,6 +4,8 @@ package com.zsl.upmall.config;
  * 系统设置
  */
 public class SystemConfig {
+    //确认收货30天(积分，余额)
+    public final static Integer ORDER_CONFIRM_TIME = 30;
     // 订单超时取消 （毫秒）
     public final static Integer ORDER_UNPAID = 30 * 60 * 1000;
     // 订单状态（ 待付款）

@@ -7,6 +7,7 @@
 package com.zsl.upmall.web;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -38,6 +39,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
@@ -441,9 +445,20 @@ public class OrderMasterController{
         //  用户冻结积分，冻结余额操作
         InviteRebateVo inviteRebateVo = HttpClientUtil.inviteRebate(requestContext.getUserId(),orderMaster.getSystemOrderNo(),requestContext.getToken());
         if(inviteRebateVo != null){
-            // todo
-          /*  String prefix_key = "freezeAssetIds_" + "20200411370797";
-            String inviteResult = (String)redisService.get(prefix_key);*/
+            String prefix_key = "freezeAssetIds_" + orderMaster.getSystemOrderNo();
+            String inviteResult = (String)redisService.get(prefix_key);
+            logger.info("【【【【"+prefix_key+"】】】】积分操作开始");
+            if(StringUtils.isNotBlank(inviteResult)){
+                JSONObject jsonObject = JSON.parseObject(inviteResult);
+                String timeStr = jsonObject.get("time").toString();
+                Date time = new Date(new Long(timeStr));
+                LocalDateTime localDateTime = time.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+                LocalDateTime localExpireTime = localDateTime.plusDays(SystemConfig.ORDER_CONFIRM_TIME);
+                Long total  = localExpireTime.toInstant(ZoneOffset.of("+8")).toEpochMilli();
+                jsonObject.put("time",total.toString());
+                redisService.set(prefix_key,jsonObject.toJSONString());
+            }
+            logger.info("确认收货成功【【【【"+orderMaster.getSystemOrderNo()+"】】】】,积分操作结束"+"【【【【"+prefix_key+"】】】");
         }
         return result.success("确认收货成功");
     }
