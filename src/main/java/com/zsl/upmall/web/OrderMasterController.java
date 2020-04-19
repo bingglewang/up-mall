@@ -178,10 +178,10 @@ public class OrderMasterController{
             orderInfo.setProductId(payOrderDetail.getSkuId());
             orderInfo.setTotalAmount(toPayOrder.getPracticalPay());
             //把之前的订单隐藏
-            OrderMaster orderHidden = new OrderMaster();
+           /* OrderMaster orderHidden = new OrderMaster();
             orderHidden.setId(toPayOrder.getId());
             orderHidden.setHidden(1);
-            baseService.updateById(orderHidden);
+            baseService.updateById(orderHidden);*/
         }
 
         if(orderInfo == null){
@@ -255,40 +255,44 @@ public class OrderMasterController{
             order.setCreateTime(new Date());
             order.setWaitPayTime(new Date());
         }
-        boolean isSaveSuccess = baseService.save(order);
-        if(!isSaveSuccess){
-            return result.error("下单失败");
+        if(StringUtils.isBlank(orderInfo.getOrderSn())){
+            boolean isSaveSuccess = baseService.save(order);
+            if(!isSaveSuccess){
+                return result.error("下单失败");
+            }
+            orderId = order.getId();
+        }else{
+            orderId = toPayOrder.getId();
         }
-        orderId = order.getId();
         // 如果是购物车结算则清除购物车 (todo )
-
-        //商品数量/库存减少
-        List<SkuAddStockVo> skuAddStockVos = new ArrayList<>();
-        //订单详情
-       for(OrderProductVo orderProductVo : orderProductVoList){
-           //判断库存是否足够
-           SkuAddStockVo skuAddStockVo = new SkuAddStockVo();
-           skuAddStockVo.setCount(orderProductVo.getProductCount());
-           skuAddStockVo.setSkuId(orderProductVo.getSkuId());
-           skuAddStockVos.add(skuAddStockVo);
-           //订单详情
-           OrderDetail orderDetail = new OrderDetail();
-           orderDetail.setActualCount(orderProductVo.getProductCount());
-           orderDetail.setGoodsCount(orderProductVo.getProductCount());
-           orderDetail.setGoodsPrice(orderProductVo.getProductPrice());
-           orderDetail.setGoodsImg(orderProductVo.getProductImg());
-           orderDetail.setGoodsName(orderProductVo.getProductName());
-           orderDetail.setGoodsSpec(orderProductVo.getSpec());
-           orderDetail.setGoodsCarriage(orderInfo.getFreight());
-           orderDetail.setOrderId(orderId);
-           orderDetail.setSkuId(orderProductVo.getSkuId());
-           orderDetail.setGoodsAmount(orderInfo.getTotalAmount().subtract(orderInfo.getFreight()));
-           orderDetail.setPracticalClearing(orderInfo.getTotalAmount());
-           orderDetailService.save(orderDetail);
-       }
 
        //下单才扣库存
         if(StringUtils.isBlank(orderInfo.getOrderSn())){
+            //商品数量/库存减少
+            List<SkuAddStockVo> skuAddStockVos = new ArrayList<>();
+            //订单详情
+            for(OrderProductVo orderProductVo : orderProductVoList){
+                //判断库存是否足够
+                SkuAddStockVo skuAddStockVo = new SkuAddStockVo();
+                skuAddStockVo.setCount(orderProductVo.getProductCount());
+                skuAddStockVo.setSkuId(orderProductVo.getSkuId());
+                skuAddStockVos.add(skuAddStockVo);
+                //订单详情
+                OrderDetail orderDetail = new OrderDetail();
+                orderDetail.setActualCount(orderProductVo.getProductCount());
+                orderDetail.setGoodsCount(orderProductVo.getProductCount());
+                orderDetail.setGoodsPrice(orderProductVo.getProductPrice());
+                orderDetail.setGoodsImg(orderProductVo.getProductImg());
+                orderDetail.setGoodsName(orderProductVo.getProductName());
+                orderDetail.setGoodsSpec(orderProductVo.getSpec());
+                orderDetail.setGoodsCarriage(orderInfo.getFreight());
+                orderDetail.setOrderId(orderId);
+                orderDetail.setSkuId(orderProductVo.getSkuId());
+                orderDetail.setGoodsAmount(orderInfo.getTotalAmount().subtract(orderInfo.getFreight()));
+                orderDetail.setPracticalClearing(orderInfo.getTotalAmount());
+                orderDetailService.save(orderDetail);
+            }
+
             int addSubStock = baseService.addAndSubSkuStock(skuAddStockVos,false);
             if(addSubStock - 0 == 0){
                 OrderMaster updateHidden = new OrderMaster();
@@ -314,7 +318,9 @@ public class OrderMasterController{
 
 
         // 订单支付超期任务
-        taskService.addTask(new OrderUnpaidTask(orderId));
+        if(StringUtils.isBlank(orderInfo.getOrderSn())){
+            taskService.addTask(new OrderUnpaidTask(orderId));
+        }
         Map<String ,Object> map = new HashMap<>();
         map.put("orderId",orderId);
         map.put("orderSn",order.getSystemOrderNo());
