@@ -29,6 +29,9 @@ public class SystemConfig {
    public final static String ADDRESS_DELETE_ADD = "http://upmall.cntracechain.com/user/userAddress/setDeleteAndAdd";
 
 
+
+   //代理商绑定地址
+    public final static String AGENT_SHARE_BIND = "http://upmall.cntracechain.com/user/userMember/updateRelation";
    //会员邀请及普通消费返利
    public final static String MEMBER_INVITEREBATE_URL = "http://upmall.cntracechain.com/up_mall_rebate/rebate/inviteRebate";
     //套餐判断

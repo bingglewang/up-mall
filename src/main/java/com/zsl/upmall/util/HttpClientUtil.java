@@ -297,6 +297,29 @@ public class HttpClientUtil {
     }
 
 
+    /**
+     * 代理商绑定
+     * @param userId
+     * @param shareId
+     * @return
+     */
+    public static int agentShareBind(Integer userId,String shareId){
+        String result = doGet(SystemConfig.AGENT_SHARE_BIND+"?userId="+userId+"&shareId="+shareId);
+        int isPack = 0;
+        try {
+            if(StringUtils.isNotBlank(result)){
+                AddressResultVo addressResultVo = JSON.parseObject(result,AddressResultVo.class);
+                if(addressResultVo != null && "100200".equals(addressResultVo.getCode())){
+                    isPack = 1;
+                }
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return isPack;
+    }
+
+
     public static void main(String[] args) {
       /*  InviteRebateVo inviteRebateVo =  inviteRebate(5,"20200416108383");*/
         //System.out.println("会员返利结果："+inviteRebateVo);
@@ -314,6 +337,8 @@ public class HttpClientUtil {
        /* System.out.println("套餐判断结果："+ isPackage(46,"AA"));*/
       /*  int i = updateAddressAndAdd(67,"be7614ac-08c1-42e0-bae4-73e20c7a4724");
         System.out.println("地址结果："+i);*/
+        int i = agentShareBind(5,"RNh7kB");
+        System.out.println("地址结果："+i);
     }
 
 

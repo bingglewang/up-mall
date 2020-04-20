@@ -109,6 +109,7 @@ public class OrderMasterController{
         orderInfo.put("finishTime",DateUtil.DateToString( orderMaster.getFinishedTime(),"yyyy-MM-dd HH:mm:ss"));
         orderInfo.put("cancelTime",DateUtil.DateToString( orderMaster.getCancelTime(),"yyyy-MM-dd HH:mm:ss"));
         orderInfo.put("expire_time",orderMaster.getCreateTime().getTime() / 1000 + SystemConfig.ORDER_UNPAID / 1000);
+        orderInfo.put("shareId",orderMaster.getRemark());
 
         //订单商品列表
         List<SkuDetailVo> productDetailList = new ArrayList<>();
@@ -242,6 +243,7 @@ public class OrderMasterController{
         order.setPracticalPay(actualPrice);
         order.setTotalCarriage(orderInfo.getFreight());
         order.setShopId(0);
+        order.setRemark(orderInfo.getShareId());
         order.setTotalGoodsAmout(orderInfo.getTotalAmount().subtract(orderInfo.getFreight()));
         //订单状态 待付款(状态)
         order.setOrderStatus(SystemConfig.ORDER_STATUS_WAIT_PAY);
@@ -456,8 +458,7 @@ public class OrderMasterController{
             logger.info("【【【【"+prefix_key+"】】】】积分操作开始");
             if(StringUtils.isNotBlank(inviteResult)){
                 JSONObject jsonObject = JSON.parseObject(inviteResult);
-                String timeStr = jsonObject.get("time").toString();
-                Date time = new Date(new Long(timeStr));
+                Date time = new Date();
                 LocalDateTime localDateTime = time.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
                 LocalDateTime localExpireTime = localDateTime.plusDays(SystemConfig.ORDER_CONFIRM_TIME);
                 Long total  = localExpireTime.toInstant(ZoneOffset.of("+8")).toEpochMilli();
@@ -561,6 +562,13 @@ public class OrderMasterController{
         upOrderReceived.setPayTime(new Date());
         if (!baseService.updateById(upOrderReceived)) {
             throw new RuntimeException("更新数据已失效");
+        }
+
+        RequestContext requestContext = RequestContextMgr.getLocalContext();
+        if(StringUtils.isNotBlank(order.getRemark())){
+            //调用绑定接口
+            HttpClientUtil.agentShareBind(requestContext.getUserId(),order.getRemark());
+            logger.info("代理商绑定结果:【【【【"+order.getSystemOrderNo()+"】】】】,用户ID:"+"【【【【"+requestContext.getUserId()+"】】】,分享人分享码:【【【"+order.getRemark()+"】】】");
         }
 
         // 取消订单超时未支付任务

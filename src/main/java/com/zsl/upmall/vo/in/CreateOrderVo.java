@@ -16,6 +16,11 @@ public class CreateOrderVo {
     private Integer addressId;
 
     /**
+     * 分享人的分享码(有就传，没有随意，都可以)
+     */
+    private String shareId;
+
+    /**
      * 微信openid
      */
     private String openid;
