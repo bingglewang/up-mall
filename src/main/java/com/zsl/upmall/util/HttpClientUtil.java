@@ -277,10 +277,11 @@ public class HttpClientUtil {
      * @param orderNo
      * @return
      */
-    public static InviteRebateVo inviteRebate(Integer memberId,String orderNo,String token){
+    public static InviteRebateVo inviteRebate(Integer memberId,String orderNo,String token,Integer productCount){
         JSONObject params = new JSONObject();
         params.put("memberId",memberId);
         params.put("orderNo",orderNo);
+        params.put("productCount",productCount);
         String result = doPostJson(SystemConfig.MEMBER_INVITEREBATE_URL,params.toJSONString(),token);
         InviteRebateVo inviteResult = null;
         try {

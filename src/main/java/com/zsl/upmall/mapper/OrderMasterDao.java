@@ -52,4 +52,11 @@ public interface OrderMasterDao extends BaseMapper<OrderMaster> {
      * @return
      */
     BigDecimal getSkuPriceByUserLevel(@Param("userId") Integer userId,@Param("skuId") Integer skuId);
+
+    /**
+     * 获取订单商品总数量
+     * @param orderId
+     * @return
+     */
+    int getTotalProductCount(@Param("orderId") Integer orderId);
 }

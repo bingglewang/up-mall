@@ -6,6 +6,7 @@ import lombok.Data;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 public class CreateOrderVo {
@@ -41,6 +42,11 @@ public class CreateOrderVo {
      */
     @FlagValidator(value = {"0","1"},message = "只能为0或者1")
     private Integer cartId;
+
+    /**
+     * 购物车，结算的购物车id数组
+     */
+    private List<Integer> cartIdList;
     /**
      * 支付方式（1：支付宝，2：微信）
      */

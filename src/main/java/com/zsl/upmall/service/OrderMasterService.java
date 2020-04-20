@@ -48,4 +48,11 @@ public interface OrderMasterService extends IService<OrderMaster> {
      * @return
      */
     BigDecimal getSkuPriceByUserLevel(Integer userId,Integer skuId);
+
+    /**
+     * 获取订单商品总数量
+     * @param orderId
+     * @return
+     */
+    int getTotalProductCount(Integer orderId);
 }

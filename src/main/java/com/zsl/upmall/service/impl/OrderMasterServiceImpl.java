@@ -68,4 +68,15 @@ public class OrderMasterServiceImpl  extends ServiceImpl<OrderMasterDao, OrderMa
     public BigDecimal getSkuPriceByUserLevel(Integer userId, Integer skuId) {
         return this.baseMapper.getSkuPriceByUserLevel(userId,skuId);
     }
+
+    /**
+     * 获取订单商品总数量
+     *
+     * @param orderId
+     * @return
+     */
+    @Override
+    public int getTotalProductCount(Integer orderId) {
+        return this.baseMapper.getTotalProductCount(orderId);
+    }
 }
