@@ -196,7 +196,7 @@ public class OrderMasterController {
                 // 普通
                 sku = baseService.getSkuDetail(orderInfo.getProductId());
                 if (sku == null) {
-                    return result.error(sku.getSkuName()+"商品不存在或已下架");
+                    return result.error("商品不存在或已下架");
                 }
                 if (sku.getStock() - orderInfo.getProductCount() < 0) {
                     return result.error(sku.getSkuName()+"库存不足");
@@ -228,7 +228,7 @@ public class OrderMasterController {
                 for(ShoppingCart cart : shoppingCarts){
                     sku = baseService.getSkuDetail(cart.getSkuId());
                     if (sku == null) {
-                        return result.error(sku.getSkuName()+"不存在或已下架");
+                        return result.error("不存在或已下架");
                     }
                     if (sku.getStock() - cart.getGoodsNum() < 0) {
                         return result.error(sku.getSkuName()+"库存不足");
@@ -242,7 +242,7 @@ public class OrderMasterController {
                     needTotalCartPrice = needTotalCartPrice.add(itemPrice);
                     orderProductVoList.add(new OrderProductVo(sku.getSkuId(), cart.getGoodsNum(), sku.getSkuPrice(), sku.getSkuImage(), sku.getSpec(), sku.getSkuName()));
                 }
-                needTotalCartPrice.add(orderInfo.getFreight());
+                needTotalCartPrice = needTotalCartPrice.add(orderInfo.getFreight());
                 if(needTotalCartPrice.compareTo(orderInfo.getTotalAmount()) != 0){
                     return result.error("订单价格不一致");
                 }
@@ -324,7 +324,12 @@ public class OrderMasterController {
 
         // 将元转分
         long startUnifiedTime = System.currentTimeMillis();
-        String totalFee = MoneyUtil.moneyYuan2FenStr(orderInfo.getTotalAmount());
+        String totalFee = "";
+        if(StringUtils.isBlank(orderInfo.getOrderSn())){
+            totalFee = MoneyUtil.moneyYuan2FenStr(orderInfo.getTotalAmount());
+        }else {
+            totalFee = MoneyUtil.moneyYuan2FenStr(toPayOrder.getPracticalPay());
+        }
         UnifiedOrderVo unifiedOrderVo = HttpClientUtil.unifiedOrder(IpUtil.getRequestIp(request), orderInfo.getOpenid(), "up-mall商品支付", orderSn, totalFee);
         logger.info("订单模块：{{" + orderSn + "}}的微信统一下单结果=====》》》" + unifiedOrderVo);
         if (unifiedOrderVo == null) {

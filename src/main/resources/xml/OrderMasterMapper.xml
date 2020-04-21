@@ -111,7 +111,6 @@
 		   sku.id skuId,
 		   sku.spu_id spuId,
 		   sku.sku_name skuName,
-		   spu.spu_name spuName,
 		   sku.cost_price costPrice,
 		   sku.retail_price retailPrice,
 		   sku.sales_volume salesVolume,
@@ -121,7 +120,6 @@
 		   GROUP_CONCAT(sv.spec_value) spec
 		  FROM
 		   sku
-		  JOIN spu ON sku.spu_id = spu.id
 		  LEFT JOIN sku_spec_value ssv ON ssv.sku_id = sku.id
 		  LEFT JOIN spec_value sv ON ssv.spec_value_id = sv.id
 		  WHERE
