@@ -37,7 +37,8 @@ public class SystemConfig {
     //套餐判断
     public final  static String IS_ORDER_PACKAGE = "http://upmall.cntracechain.com/common-goods/upMall/uncalibrated/customizedCheck";
     //微信统一下单接口
-    public final  static String WEIXIN_UNION_RUL = "http://zs-beta.cntracechain.com/baseService/wxpay/unifiedOrder";
+    //public final  static String WEIXIN_UNION_RUL = "http://zs-beta.cntracechain.com/baseService/wxpay/unifiedOrder";
+    public final  static String WEIXIN_UNION_RUL = "http://mall.cntracechain.com/baseService/wxpay/unifiedOrder";
     //微信支付回调地址
     public final  static String BUSINESS_NOTIFY_URL = "http://upmall.cntracechain.com/order/order/pay-notify";
     //系统标识
