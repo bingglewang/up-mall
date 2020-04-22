@@ -468,23 +468,26 @@ public class OrderMasterController {
 
         RequestContext requestContext = RequestContextMgr.getLocalContext();
         Integer productCount = baseService.getTotalProductCount(orderMaster.getId().intValue());
-        //  用户冻结积分，冻结余额操作
-        InviteRebateVo inviteRebateVo = HttpClientUtil.inviteRebate(requestContext.getUserId(), orderMaster.getSystemOrderNo(), requestContext.getToken(),productCount);
-        if (inviteRebateVo != null) {
-            String prefix_key = "freezeAssetIds_" + orderMaster.getSystemOrderNo();
-            String inviteResult = (String) redisService.get(prefix_key);
-            logger.info("【【【【" + prefix_key + "】】】】积分操作开始");
-            if (StringUtils.isNotBlank(inviteResult)) {
-                JSONObject jsonObject = JSON.parseObject(inviteResult);
-                Date time = new Date();
-                LocalDateTime localDateTime = time.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
-                LocalDateTime localExpireTime = localDateTime.plusDays(SystemConfig.ORDER_CONFIRM_TIME);
-                Long total = localExpireTime.toInstant(ZoneOffset.of("+8")).toEpochMilli();
-                jsonObject.put("time", total.toString());
-                redisService.set(prefix_key, jsonObject.toJSONString());
-            }
-            logger.info("确认收货成功【【【【" + orderMaster.getSystemOrderNo() + "】】】】,积分操作结束" + "【【【【" + prefix_key + "】】】");
+        //会员邀请及普通消费返利
+        if(StringUtils.isBlank(orderMaster.getComboLevel())){
+            InviteRebateVo inviteRebateVo = HttpClientUtil.inviteRebate(requestContext.getUserId(), orderMaster.getSystemOrderNo(), requestContext.getToken(),productCount);
+            logger.info("会员邀请及普通消费返利【【【【" + orderMaster.getSystemOrderNo() + "】】】】,操作结束" + "【【【【" + inviteRebateVo + "】】】");
         }
+
+        //  用户冻结积分，冻结余额操作
+        String prefix_key = "freezeAssetIds_" + orderMaster.getSystemOrderNo();
+        String inviteResult = (String) redisService.get(prefix_key);
+        logger.info("【【【【" + prefix_key + "】】】】积分操作开始");
+        if (StringUtils.isNotBlank(inviteResult)) {
+            JSONObject jsonObject = JSON.parseObject(inviteResult);
+            Date time = new Date();
+            LocalDateTime localDateTime = time.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+            LocalDateTime localExpireTime = localDateTime.plusDays(SystemConfig.ORDER_CONFIRM_TIME);
+            Long total = localExpireTime.toInstant(ZoneOffset.of("+8")).toEpochMilli();
+            jsonObject.put("time", total.toString());
+            redisService.set(prefix_key, jsonObject.toJSONString());
+        }
+        logger.info("确认收货成功【【【【" + orderMaster.getSystemOrderNo() + "】】】】,积分操作结束" + "【【【【" + prefix_key + "】】】");
         return result.success("确认收货成功");
     }
 
