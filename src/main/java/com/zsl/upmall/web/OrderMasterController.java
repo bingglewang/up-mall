@@ -588,8 +588,8 @@ public class OrderMasterController {
         RequestContext requestContext = RequestContextMgr.getLocalContext();
         if (StringUtils.isNotBlank(order.getRemark())) {
             //调用绑定接口
-            HttpClientUtil.agentShareBind(requestContext.getUserId(), order.getRemark());
-            logger.info("代理商绑定结果:【【【【" + order.getSystemOrderNo() + "】】】】,用户ID:" + "【【【【" + requestContext.getUserId() + "】】】,分享人分享码:【【【" + order.getRemark() + "】】】");
+            int i = HttpClientUtil.agentShareBind(requestContext.getUserId(), order.getRemark());
+            logger.info("代理商绑定结果: [[[["+ i +"]]]]----【【【【" + order.getSystemOrderNo() + "】】】】,用户ID:" + "【【【【" + requestContext.getUserId() + "】】】,分享人分享码:【【【" + order.getRemark() + "】】】");
         }
 
         // 取消订单超时未支付任务
