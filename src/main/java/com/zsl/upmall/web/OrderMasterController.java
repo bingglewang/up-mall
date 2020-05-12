@@ -6,6 +6,11 @@
  */
 package com.zsl.upmall.web;
 
+import cn.binarywang.wx.miniapp.api.WxMaService;
+import cn.binarywang.wx.miniapp.api.impl.WxMaServiceImpl;
+import cn.binarywang.wx.miniapp.bean.WxMaSubscribeData;
+import cn.binarywang.wx.miniapp.bean.WxMaSubscribeMessage;
+import cn.binarywang.wx.miniapp.config.impl.WxMaDefaultConfigImpl;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -30,10 +35,6 @@ import com.zsl.upmall.vo.in.*;
 import com.zsl.upmall.vo.out.Logistics;
 import com.zsl.upmall.vo.out.OrderListVo;
 import com.zsl.upmall.vo.out.UnifiedOrderVo;
-import me.chanjar.weixin.mp.api.WxMpInMemoryConfigStorage;
-import me.chanjar.weixin.mp.api.WxMpService;
-import me.chanjar.weixin.mp.api.impl.WxMpServiceImpl;
-import me.chanjar.weixin.mp.bean.template.WxMpTemplateMessage;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +42,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.validation.Valid;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -722,23 +722,44 @@ public class OrderMasterController {
     @GetMapping("/push")
     public void push() {
         //1，配置
-        WxMpInMemoryConfigStorage wxStorage = new WxMpInMemoryConfigStorage();
-        wxStorage.setAppId(wxProperties.getAppId());
-        wxStorage.setSecret(wxProperties.getAppSecret());
-        WxMpService wxMpService = new WxMpServiceImpl();
-        wxMpService.setWxMpConfigStorage(wxStorage);
+        WxMaDefaultConfigImpl config = new WxMaDefaultConfigImpl();
+        config.setAppid(wxProperties.getAppId());
+        config.setSecret(wxProperties.getAppSecret());
+        WxMaService wxMaService = new WxMaServiceImpl();
+        wxMaService.setWxMaConfig(config);
 
         //2,推送消息
-        WxMpTemplateMessage templateMessage = WxMpTemplateMessage.builder()
-                .toUser("o5kho6DgC7SDry8zCmXuvHJGvrgI")//要推送的用户openid
+        WxMaSubscribeMessage subscribeMessage = WxMaSubscribeMessage.builder()
+                .toUser("oB2fF5N8dIYFq7UtfFfIVkt6jz-E")//要推送的用户openid
                 .templateId(getTemplateNameId("success"))//模版id
-                .url("http://www.baidu.com")//点击模版消息要访问的网址
+                .page("pages/index/index")  //点击跳转的页面
                 .build();
         //3,如果是正式版发送模版消息，这里需要配置你的信息
-        //        templateMessage.addData(new WxMpTemplateData("name", "value", "#FF00FF"));
-        //                templateMessage.addData(new WxMpTemplateData(name2, value2, color2));
+        //==========================================创建一个参数集合========================================================
+        ArrayList<WxMaSubscribeData> wxMaSubscribeData = new ArrayList<>();
+        //第一个内容：
+        WxMaSubscribeData wxMaSubscribeData1 = new WxMaSubscribeData();
+        wxMaSubscribeData1.setName("thing1");
+        wxMaSubscribeData1.setValue("你的车子需要挪动谢谢");
+        wxMaSubscribeData.add(wxMaSubscribeData1);
+
+        // 第二个内容：
+        WxMaSubscribeData wxMaSubscribeData2 = new WxMaSubscribeData();
+        wxMaSubscribeData2.setName("car_number2");
+        wxMaSubscribeData2.setValue("粤A12345");
+        wxMaSubscribeData.add(wxMaSubscribeData2);
+
+        // 第二个内容：
+        WxMaSubscribeData wxMaSubscribeData3 = new WxMaSubscribeData();
+        wxMaSubscribeData3.setName("date3");
+        wxMaSubscribeData3.setValue(DateUtil.DateToString(new Date(), "yyyy-MM-dd HH:mm:ss"));
+        wxMaSubscribeData.add(wxMaSubscribeData3);
+
+        //把集合给大的data
+        subscribeMessage.setData(wxMaSubscribeData);
+
         try {
-            wxMpService.getTemplateMsgService().sendTemplateMsg(templateMessage);
+            wxMaService.getMsgService().sendSubscribeMsg(subscribeMessage);
         } catch (Exception e) {
             System.out.println("推送失败：" + e.getMessage());
             e.printStackTrace();

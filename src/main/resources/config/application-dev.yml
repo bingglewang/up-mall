@@ -41,10 +41,10 @@ mybatis-plus:
 #微信配置
 upmall:
   wx:
-    app-id: wx77bb69292323a000
-    app-secret: 29bd368145806115ad6820133e62806e
+    app-id: wxf7f49d6b420460a7
+    app-secret: 3fe68e18301f0d648c9b6da4903523f3
     template:
      - name: success
-       templateId: Tpln-Eue2obJ0B-8JNkgkiRJaDMPgVeIgGxna982xrg
-     - name: faild
-       templateId: Tpln-Eue2obJ0B-8JNkgkiRJaDMPgVeIgGxna982xrg
+       templateId: TfExvyNdJ2doWTPUFeWdc-mi1fEzAJM-bu-EslrcE0E
+     - name: failed
+       templateId: 6DMosxpkmcj7ERUcCUn8qnLIKE7Oq-GdNaKp2BUwHr8

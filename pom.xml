@@ -93,11 +93,11 @@
             <version>1.1.10</version>
         </dependency>
 
-        <!--微信模版消息推送三方sdk-->
+        <!--微信小程序-->
         <dependency>
             <groupId>com.github.binarywang</groupId>
-            <artifactId>weixin-java-mp</artifactId>
-            <version>3.3.0</version>
+            <artifactId>weixin-java-miniapp</artifactId>
+            <version>3.6.0</version>
         </dependency>
 
     </dependencies>
