@@ -15,6 +15,7 @@ import com.zsl.upmall.aid.JsonResult;
 import com.zsl.upmall.aid.PageParam;
 import com.zsl.upmall.config.SynQueryDemo;
 import com.zsl.upmall.config.SystemConfig;
+import com.zsl.upmall.config.WxProperties;
 import com.zsl.upmall.context.RequestContext;
 import com.zsl.upmall.context.RequestContextMgr;
 import com.zsl.upmall.entity.*;
@@ -29,6 +30,10 @@ import com.zsl.upmall.vo.in.*;
 import com.zsl.upmall.vo.out.Logistics;
 import com.zsl.upmall.vo.out.OrderListVo;
 import com.zsl.upmall.vo.out.UnifiedOrderVo;
+import me.chanjar.weixin.mp.api.WxMpInMemoryConfigStorage;
+import me.chanjar.weixin.mp.api.WxMpService;
+import me.chanjar.weixin.mp.api.impl.WxMpServiceImpl;
+import me.chanjar.weixin.mp.bean.template.WxMpTemplateMessage;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,6 +85,9 @@ public class OrderMasterController {
     @Autowired
     private TrackingService trackingService;
 
+    @Autowired
+    private WxProperties wxProperties;
+
     protected JsonResult result = new JsonResult();
 
 
@@ -108,9 +116,12 @@ public class OrderMasterController {
         orderInfo.put("status", orderMaster.getOrderStatus());
         orderInfo.put("statusText", SystemConfig.getStatusText(orderMaster.getOrderStatus()));
         orderInfo.put("submitTime", DateUtil.DateToString(orderMaster.getCreateTime(), "yyyy-MM-dd HH:mm:ss"));
-        orderInfo.put("payTime", DateUtil.DateToString(orderMaster.getWaitReceiveTime(), "yyyy-MM-dd HH:mm:ss"));
+        orderInfo.put("payTime", DateUtil.DateToString(orderMaster.getPayTime(), "yyyy-MM-dd HH:mm:ss"));
         orderInfo.put("finishTime", DateUtil.DateToString(orderMaster.getFinishedTime(), "yyyy-MM-dd HH:mm:ss"));
         orderInfo.put("cancelTime", DateUtil.DateToString(orderMaster.getCancelTime(), "yyyy-MM-dd HH:mm:ss"));
+        orderInfo.put("deliverTime",DateUtil.DateToString(orderMaster.getDeliverTime(), "yyyy-MM-dd HH:mm:ss"));
+        orderInfo.put("refundTime",DateUtil.DateToString(orderMaster.getRefundTime(), "yyyy-MM-dd HH:mm:ss"));
+        orderInfo.put("refundFinishTime",DateUtil.DateToString(orderMaster.getRefundFinishTime(), "yyyy-MM-dd HH:mm:ss"));
         orderInfo.put("expire_time", orderMaster.getCreateTime().getTime() / 1000 + SystemConfig.ORDER_UNPAID / 1000);
         orderInfo.put("shareId", orderMaster.getRemark());
 
@@ -269,7 +280,6 @@ public class OrderMasterController {
             //订单号
             order.setSystemOrderNo(generateOrderSn(userId));
             order.setCreateTime(new Date());
-            order.setWaitPayTime(new Date());
             boolean isSaveSuccess = baseService.save(order);
             if (!isSaveSuccess) {
                 return result.error("下单失败");
@@ -574,11 +584,10 @@ public class OrderMasterController {
             return result.success("订单已经处理成功!");
         }
 
-        // 设置订单 待收货
+        // 设置订单 待收货 ------>  支付成功，设置成 待发货
         OrderMaster upOrderReceived = new OrderMaster();
         upOrderReceived.setId(order.getId());
-        upOrderReceived.setOrderStatus(SystemConfig.ORDER_STATUS_RECIEVE);
-        upOrderReceived.setWaitReceiveTime(new Date());
+        upOrderReceived.setOrderStatus(SystemConfig.ORDER_STATUS_DELIVER);
         upOrderReceived.setTransactionOrderNo(outTradeNo);
         upOrderReceived.setPayTime(new Date());
         if (!baseService.updateById(upOrderReceived)) {
@@ -703,4 +712,54 @@ public class OrderMasterController {
             return result.error("获取物流失败");
         }
     }
+
+    // 拼团失败，退款并改变订单状态 todo
+    // 参团列表 todo
+
+    /*
+     * 模板推送 todo
+     * */
+    @GetMapping("/push")
+    public void push() {
+        //1，配置
+        WxMpInMemoryConfigStorage wxStorage = new WxMpInMemoryConfigStorage();
+        wxStorage.setAppId(wxProperties.getAppId());
+        wxStorage.setSecret(wxProperties.getAppSecret());
+        WxMpService wxMpService = new WxMpServiceImpl();
+        wxMpService.setWxMpConfigStorage(wxStorage);
+
+        //2,推送消息
+        WxMpTemplateMessage templateMessage = WxMpTemplateMessage.builder()
+                .toUser("o5kho6DgC7SDry8zCmXuvHJGvrgI")//要推送的用户openid
+                .templateId(getTemplateNameId("success"))//模版id
+                .url("http://www.baidu.com")//点击模版消息要访问的网址
+                .build();
+        //3,如果是正式版发送模版消息，这里需要配置你的信息
+        //        templateMessage.addData(new WxMpTemplateData("name", "value", "#FF00FF"));
+        //                templateMessage.addData(new WxMpTemplateData(name2, value2, color2));
+        try {
+            wxMpService.getTemplateMsgService().sendTemplateMsg(templateMessage);
+        } catch (Exception e) {
+            System.out.println("推送失败：" + e.getMessage());
+            e.printStackTrace();
+        }
+
+    }
+
+
+    /**
+     * 获取模板id
+     * @param templateName
+     * @return
+     */
+    public String getTemplateNameId(String templateName) {
+        Map<String,String> template =  wxProperties.getTemplate().stream()
+                .filter(item -> item.get("name").equals(templateName)).findAny().orElse(null);
+        if(template != null){
+            return template.get("templateId");
+        }else{
+            return "";
+        }
+    }
+
 }

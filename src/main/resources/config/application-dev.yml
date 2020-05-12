@@ -37,3 +37,14 @@ spring:
 mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+#微信配置
+upmall:
+  wx:
+    app-id: wx77bb69292323a000
+    app-secret: 29bd368145806115ad6820133e62806e
+    template:
+     - name: success
+       templateId: Tpln-Eue2obJ0B-8JNkgkiRJaDMPgVeIgGxna982xrg
+     - name: faild
+       templateId: Tpln-Eue2obJ0B-8JNkgkiRJaDMPgVeIgGxna982xrg

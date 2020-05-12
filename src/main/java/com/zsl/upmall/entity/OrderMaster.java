@@ -77,7 +77,7 @@ public class OrderMaster extends Model<OrderMaster> {
 	/** 物流单号 */
 	private String trackingNumber;
 
-	/** 订单状态（0待付款，1待收货，2已完成，3已取消） */
+	/** 订单状态（0待付款，1待收货，2已完成，3已取消，4待发货，5退款中，6退款完成） */
 	private Integer orderStatus;
 
 	@DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
@@ -87,18 +87,8 @@ public class OrderMaster extends Model<OrderMaster> {
 
 	@DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
 	@JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone = "GMT+8")
-	/** 待支付时间 */
-	private Date waitPayTime;
-
-	@DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-	@JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone = "GMT+8")
 	/** 支付时间 */
 	private Date payTime;
-
-	@DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-	@JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone = "GMT+8")
-	/** 待收货时间 */
-	private Date waitReceiveTime;
 
 	@DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
 	@JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone = "GMT+8")
@@ -109,6 +99,21 @@ public class OrderMaster extends Model<OrderMaster> {
 	@JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone = "GMT+8")
 	/** 取消时间 */
 	private Date cancelTime;
+
+	@DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+	@JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone = "GMT+8")
+	/** 发货时间 */
+	private Date deliverTime;
+
+	@DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+	@JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone = "GMT+8")
+	/** 退款时间 */
+	private Date refundTime;
+
+	@DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+	@JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone = "GMT+8")
+	/** 退款完成时间 */
+	private Date refundFinishTime;
 
 
 	@Override

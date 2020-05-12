@@ -20,14 +20,15 @@
 		<id column="tracking_number" property="trackingNumber" />
 		<id column="order_status" property="orderStatus" />
 		<id column="create_time" property="createTime" />
-		<id column="wait_pay_time" property="waitPayTime" />
 		<id column="pay_time" property="payTime" />
-		<id column="wait_receive_time" property="waitReceiveTime" />
 		<id column="finished_time" property="finishedTime" />
 		<id column="cancel_time" property="cancelTime" />
+		<id column="deliver_time" property="deliverTime" />
+		<id column="refund_time" property="refundTime" />
+		<id column="refund_finish_time" property="refundFinishTime" />
 	</resultMap>
 	<sql id="Base_Column_List">
-		id, system_order_no, transaction_order_no, pay_way, member_id, address_id,combo_level, shop_id, total_goods_amout, total_carriage, practical_pay, hidden, remark, tracking_company_id, tracking_number, order_status, create_time, wait_pay_time, pay_time, wait_receive_time, finished_time, cancel_time
+		id, system_order_no, transaction_order_no, pay_way, member_id, address_id,combo_level, shop_id, total_goods_amout, total_carriage, practical_pay, hidden, remark, tracking_company_id, tracking_number, order_status, create_time, pay_time, finished_time, cancel_time, deliver_time, refund_time, refund_finish_time
 	</sql>
 
 	<resultMap id="OrderListResultMap" type="com.zsl.upmall.vo.out.OrderListVo">

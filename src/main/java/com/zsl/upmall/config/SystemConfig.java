@@ -16,6 +16,12 @@ public class SystemConfig {
     public final static Integer ORDER_STATUS_FINISH = 2;
     // 订单状态（ 已取消）
     public final static Integer ORDER_STATUS_CANCLE = 3;
+    // 订单状态 （待发货）
+    public final static Integer ORDER_STATUS_DELIVER = 4;
+    // 订单状态（退款中）
+    public final static Integer ORDER_STATUS_REFUNDINGD = 5;
+    // 订单状态 （退款完成）
+    public final static Integer ORDER_STATUS_REFUNDED = 6;
 
     //sku 详情接口路径 (sql代替)
     public final static String SKU_DETAIL_URL = "http://upmall.cntracechain.com/common-goods/common/skuDetail";
@@ -58,6 +64,12 @@ public class SystemConfig {
             return "已完成";
         }else if(status - ORDER_STATUS_CANCLE == 0){
             return "已取消";
+        }else if(status - ORDER_STATUS_DELIVER == 0){
+            return "待发货";
+        }else if(status - ORDER_STATUS_REFUNDINGD == 0){
+            return "退款中";
+        }else if(status - ORDER_STATUS_REFUNDED == 0){
+            return "退款完成";
         }else {
             return "";
         }
