@@ -53,8 +53,8 @@ public class OrderMasterServiceImpl  extends ServiceImpl<OrderMasterDao, OrderMa
      * @return
      */
     @Override
-    public int addAndSubSkuStock(List<SkuAddStockVo> list, boolean action) {
-        return this.baseMapper.addAndSubSkuStock(list,action);
+    public int addAndSubSkuStock(List<SkuAddStockVo> list, boolean action, boolean isSaleVolume, boolean isStock) {
+        return this.baseMapper.addAndSubSkuStock(list,action,isSaleVolume,isStock);
     }
 
     /**

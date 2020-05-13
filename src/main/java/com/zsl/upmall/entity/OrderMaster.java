@@ -77,6 +77,12 @@ public class OrderMaster extends Model<OrderMaster> {
 	/** 物流单号 */
 	private String trackingNumber;
 
+	/** 拼团活动id */
+	private Integer grouponActivityId;
+
+	/** 拼团主单id */
+	private Integer grouponOrderId;
+
 	/** 订单状态（0待付款，1待收货，2已完成，3已取消，4待发货，5退款中，6退款完成） */
 	private Integer orderStatus;
 

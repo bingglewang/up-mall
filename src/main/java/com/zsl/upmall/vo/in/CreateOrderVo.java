@@ -48,9 +48,9 @@ public class CreateOrderVo {
      */
     private List<Integer> cartIdList;
     /**
-     * 支付方式（1：支付宝，2：微信）
+     * 支付方式（1：支付宝，2：微信，3：余额支付）
      */
-    @FlagValidator(value = {"1","2"},message = "只能为1或者2")
+    @FlagValidator(value = {"1","2","3"},message = "只能为1,2,3")
     private Integer payWay;
     /**
      * 商家id
@@ -78,4 +78,16 @@ public class CreateOrderVo {
      * 商品数量
      */
     private Integer productCount;
+
+    /**
+     * 拼团活动id (如果不是拼团，则传0，或者不传，如果是拼团，则传具体的拼团活动id)
+     */
+    private Integer grouponActivityId = 0;
+
+    /**
+     * 参团id（如果不是拼团，不传，如果是拼团（分两种情况：1，自己开团，2：参加别人的团））
+     * 自己开团传 0
+     * 参加别人的团 传具体的团的id
+     */
+    private Integer joinGroupId = -1;
 }

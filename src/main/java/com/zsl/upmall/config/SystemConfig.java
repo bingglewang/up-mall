@@ -4,6 +4,10 @@ package com.zsl.upmall.config;
  * 系统设置
  */
 public class SystemConfig {
+    //微信支付
+    public final static Integer WEIXIN_PAY = 2;
+    //余额支付
+    public final static Integer BALANCE_PAY = 3;
     //确认收货30天(积分，余额)
     public final static Integer ORDER_CONFIRM_TIME = 30;
     // 订单超时取消 （毫秒）
@@ -49,7 +53,10 @@ public class SystemConfig {
     public final  static String BUSINESS_NOTIFY_URL = "http://upmall.cntracechain.com/order/order/pay-notify";
     //系统标识
     public final static String SYSTEM_UNIQUE_CODE = "up-mall";
-
+    // 扣减用户积分和余额
+    public final static String DEDUCT_USER_BALANCE = "http://upmall.cntracechain.com/user/userMember/updateUserBalanceOrIntegral";
+    // 添加用户余额扣减记录
+    public final static  String DEDUCT_USER_BALANCE_LOG = "http://upmall.cntracechain.com/upmall-point/balance/insert";
 
 
     public static String getStatusText(Integer status){

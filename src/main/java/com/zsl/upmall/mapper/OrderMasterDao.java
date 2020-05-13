@@ -43,7 +43,7 @@ public interface OrderMasterDao extends BaseMapper<OrderMaster> {
      * @param action
      * @return
      */
-    int addAndSubSkuStock(@Param("list")List<SkuAddStockVo> list,@Param("action") boolean action);
+    int addAndSubSkuStock(@Param("list")List<SkuAddStockVo> list,@Param("action") boolean action,@Param("isSaleVolume") boolean isSaleVolume,@Param("isStock") boolean isStock);
 
     /**
      * 获取sku价格

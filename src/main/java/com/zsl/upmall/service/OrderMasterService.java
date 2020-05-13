@@ -39,7 +39,7 @@ public interface OrderMasterService extends IService<OrderMaster> {
      * @param action
      * @return
      */
-    int addAndSubSkuStock(List<SkuAddStockVo> list, boolean action);
+    int addAndSubSkuStock(List<SkuAddStockVo> list, boolean action, boolean isSaleVolume, boolean isStock);
 
     /**
      * 获取sku价格

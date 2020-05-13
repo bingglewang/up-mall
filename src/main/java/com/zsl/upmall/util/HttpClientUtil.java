@@ -254,6 +254,70 @@ public class HttpClientUtil {
         return unifiedResult;
     }
 
+    /**
+     * 余额支付
+     * @param balanceItem  余额操作类型（1邀请好友购买；2余额提现；3积分提现至余额；4用户购买商品抵扣；5退款回收余额；6拼团赠送奖励金）
+     * @param onlyDeduct 是否只扣减余额
+     * @param userId 用户id
+     * @param token 登录品证
+     * @param deductBalance 扣减的余额数量，正：扣减，负：增加
+     * @param orderSn
+     * @return
+     */
+    public static boolean deductUserBalance(Integer balanceItem,Boolean onlyDeduct, Integer userId,String token,BigDecimal deductBalance,String orderSn){
+        JSONObject params = new JSONObject();
+        params.put("userId",userId);
+        params.put("balance",deductBalance);
+        String result = doPostJson(SystemConfig.DEDUCT_USER_BALANCE,params.toJSONString(),token);
+        boolean isSuccess = false;
+        try {
+            if(StringUtils.isNotBlank(result)){
+                AddressResultVo addressResultVo = JSON.parseObject(result,AddressResultVo.class);
+                if(addressResultVo != null &&  "100200".equals(addressResultVo.getCode())){
+                    isSuccess = true;
+                    // 支付回调
+                    if(!onlyDeduct){
+                        doPayNotify(token,orderSn);
+                    }
+                    // 添加余额扣减记录
+                    JSONObject balanceLogParams = new JSONObject();
+                    balanceLogParams.put("memberId",userId);
+                    balanceLogParams.put("balanceCount",deductBalance);
+                    if(deductBalance.compareTo(new BigDecimal(0)) > 0){
+                        balanceLogParams.put("balanceType",-1);
+                    }else{
+                        balanceLogParams.put("balanceType",1);
+                    }
+                    balanceLogParams.put("balanceItem",balanceItem);
+                    balanceLogParams.put("balanceSource",orderSn);
+                    String balanceLogResult = doPostJson(SystemConfig.DEDUCT_USER_BALANCE_LOG,balanceLogParams.toJSONString(),token);
+                    logger.info("用户余额记录添加结果：orderSn【【【"+orderSn+"】】】"+"=====》》{{{"+balanceLogResult+"}}}");
+                }
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return isSuccess;
+    }
+
+
+    /**
+     * 余额支付回调
+     * @param token
+     * @param orderSn
+     */
+    public static void doPayNotify(String token,String orderSn){
+        //回调 改变订单状态
+        JSONObject paramsNotify = new JSONObject();
+        paramsNotify.put("result","success");
+        paramsNotify.put("notify_url",SystemConfig.BUSINESS_NOTIFY_URL);
+        paramsNotify.put("transaction_id",orderSn);
+        paramsNotify.put("out_trade_no",orderSn);
+        paramsNotify.put("payWay","3");
+        String notifyResult = doPostJson(SystemConfig.BUSINESS_NOTIFY_URL,paramsNotify.toJSONString(),token);
+        logger.info("余额支付回调结果：orderSn【【【"+orderSn+"】】】"+"=====》》{{{"+notifyResult+"}}}");
+    }
+
 
     /**
      * 将地址设置成假删除，并且新增一条

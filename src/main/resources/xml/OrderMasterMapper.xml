@@ -18,6 +18,8 @@
 		<id column="remark" property="remark" />
 		<id column="tracking_company_id" property="trackingCompanyId" />
 		<id column="tracking_number" property="trackingNumber" />
+		<id column="groupon_activity_id" property="grouponActivityId" />
+		<id column="groupon_order_id" property="grouponOrderId" />
 		<id column="order_status" property="orderStatus" />
 		<id column="create_time" property="createTime" />
 		<id column="pay_time" property="payTime" />
@@ -28,7 +30,7 @@
 		<id column="refund_finish_time" property="refundFinishTime" />
 	</resultMap>
 	<sql id="Base_Column_List">
-		id, system_order_no, transaction_order_no, pay_way, member_id, address_id,combo_level, shop_id, total_goods_amout, total_carriage, practical_pay, hidden, remark, tracking_company_id, tracking_number, order_status, create_time, pay_time, finished_time, cancel_time, deliver_time, refund_time, refund_finish_time
+		id, system_order_no, transaction_order_no, pay_way, member_id, address_id,combo_level, shop_id, total_goods_amout, total_carriage, practical_pay, hidden, remark, tracking_company_id, tracking_number,groupon_activity_id, groupon_order_id, order_status, create_time, pay_time, finished_time, cancel_time, deliver_time, refund_time, refund_finish_time
 	</sql>
 
 	<resultMap id="OrderListResultMap" type="com.zsl.upmall.vo.out.OrderListVo">
@@ -132,20 +134,25 @@
 	<!--扣减库存-->
 	<update id="addAndSubSkuStock" parameterType="java.util.List">
 		UPDATE sku
-		SET sales_volume =
-		<foreach collection="list" item="item" open=" CASE id " close=" ELSE sales_volume END,">
-			WHEN #{item.skuId} THEN (sales_volume
-			<if test="!action">+</if>
-			<if test="action">-</if>
-			#{item.count})
-		</foreach>
-		stock =
-		<foreach collection="list" item="item" open=" CASE id " close=" ELSE stock END">
-			WHEN #{item.skuId} THEN (stock
-			<if test="!action">-</if>
-			<if test="action">+</if>
-			#{item.count})
-		</foreach>
+		SET
+		<if test="isSaleVolume">
+			sales_volume =
+			<foreach collection="list" item="item" open=" CASE id " close=" ELSE sales_volume END,">
+				WHEN #{item.skuId} THEN (sales_volume
+				<if test="!action">+</if>
+				<if test="action">-</if>
+				#{item.count})
+			</foreach>
+		</if>
+		<if test="isStock">
+			stock =
+				<foreach collection="list" item="item" open=" CASE id " close=" ELSE stock END">
+					WHEN #{item.skuId} THEN (stock
+					<if test="!action">-</if>
+					<if test="action">+</if>
+					#{item.count})
+				</foreach>
+		</if>
 		WHERE id IN
 		<foreach collection="list" item="item" separator="," open="(" close=")">
 			#{item.skuId}

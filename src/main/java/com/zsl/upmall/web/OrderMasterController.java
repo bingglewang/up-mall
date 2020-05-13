@@ -6,11 +6,6 @@
  */
 package com.zsl.upmall.web;
 
-import cn.binarywang.wx.miniapp.api.WxMaService;
-import cn.binarywang.wx.miniapp.api.impl.WxMaServiceImpl;
-import cn.binarywang.wx.miniapp.bean.WxMaSubscribeData;
-import cn.binarywang.wx.miniapp.bean.WxMaSubscribeMessage;
-import cn.binarywang.wx.miniapp.config.impl.WxMaDefaultConfigImpl;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -20,7 +15,6 @@ import com.zsl.upmall.aid.JsonResult;
 import com.zsl.upmall.aid.PageParam;
 import com.zsl.upmall.config.SynQueryDemo;
 import com.zsl.upmall.config.SystemConfig;
-import com.zsl.upmall.config.WxProperties;
 import com.zsl.upmall.context.RequestContext;
 import com.zsl.upmall.context.RequestContextMgr;
 import com.zsl.upmall.entity.*;
@@ -86,7 +80,7 @@ public class OrderMasterController {
     private TrackingService trackingService;
 
     @Autowired
-    private WxProperties wxProperties;
+    private GrouponOrderMasterService grouponOrderMasterService;
 
     protected JsonResult result = new JsonResult();
 
@@ -169,6 +163,8 @@ public class OrderMasterController {
         Long orderId = null;
         //订单号
         String orderSn = "";
+        // 支付方式
+        int payType = 0;
         //去支付（）
         OrderMaster toPayOrder = null;
         if (StringUtils.isNotBlank(orderInfo.getOrderSn())) {
@@ -183,6 +179,7 @@ public class OrderMasterController {
             }
             orderSn = toPayOrder.getSystemOrderNo();
             orderId = toPayOrder.getId();
+            payType = toPayOrder.getPayWay();
         }
 
         if (StringUtils.isBlank(orderInfo.getOrderSn())) {
@@ -273,6 +270,9 @@ public class OrderMasterController {
             order.setPracticalPay(actualPrice);
             order.setTotalCarriage(orderInfo.getFreight());
             order.setShopId(0);
+            //存放 分享码，拼团相关信息
+            order.setGrouponActivityId(orderInfo.getGrouponActivityId());
+            order.setGrouponOrderId(orderInfo.getJoinGroupId());
             order.setRemark(orderInfo.getShareId());
             order.setTotalGoodsAmout(orderInfo.getTotalAmount().subtract(orderInfo.getFreight()));
             //订单状态 待付款(状态)
@@ -286,6 +286,7 @@ public class OrderMasterController {
             }
             orderId = order.getId();
             orderSn = order.getSystemOrderNo();
+            payType = order.getPayWay();
             if(!(orderInfo.getCartId() - 0 == 0)) {
                 // 如果是购物车结算则清除购物车 (又加上上了 )
                 orderInfo.getCartIdList().stream().forEach(item -> {
@@ -319,7 +320,7 @@ public class OrderMasterController {
                 orderDetailService.save(orderDetail);
             }
 
-            int addSubStock = baseService.addAndSubSkuStock(skuAddStockVos, false);
+            int addSubStock = baseService.addAndSubSkuStock(skuAddStockVos, false,false,true);
             if (addSubStock - 0 == 0) {
                 OrderMaster updateHidden = new OrderMaster();
                 updateHidden.setId(order.getId());
@@ -332,30 +333,50 @@ public class OrderMasterController {
             logger.info("订单模块：{{" + order.getSystemOrderNo() + "}}的地址处理结果=====》》》" + updateAddreResult);
         }
 
-        // 将元转分
-        long startUnifiedTime = System.currentTimeMillis();
-        String totalFee = "";
-        if(StringUtils.isBlank(orderInfo.getOrderSn())){
-            totalFee = MoneyUtil.moneyYuan2FenStr(orderInfo.getTotalAmount());
-        }else {
-            totalFee = MoneyUtil.moneyYuan2FenStr(toPayOrder.getPracticalPay());
-        }
-        UnifiedOrderVo unifiedOrderVo = HttpClientUtil.unifiedOrder(IpUtil.getRequestIp(request), orderInfo.getOpenid(), "up-mall商品支付", orderSn, totalFee);
-        logger.info("订单模块：{{" + orderSn + "}}的微信统一下单结果=====》》》" + unifiedOrderVo);
-        if (unifiedOrderVo == null) {
-            return result.error("微信统一下单失败");
-        }
-        logger.info("统一下单语句执行时间=========【【【 " + (System.currentTimeMillis() - startUnifiedTime) / 1000 + " 】】】秒");
+        Map<String, Object> map = new HashMap<>();
+        map.put("orderId", orderId);
+        map.put("orderSn", orderSn);
 
+        // 支付方式，添加余额支付
+        if(payType - SystemConfig.WEIXIN_PAY == 0) {
+            // 将元转分
+            long startUnifiedTime = System.currentTimeMillis();
+            String totalFee = "";
+            if (StringUtils.isBlank(orderInfo.getOrderSn())) {
+                totalFee = MoneyUtil.moneyYuan2FenStr(orderInfo.getTotalAmount());
+            } else {
+                totalFee = MoneyUtil.moneyYuan2FenStr(toPayOrder.getPracticalPay());
+            }
+            UnifiedOrderVo unifiedOrderVo = HttpClientUtil.unifiedOrder(IpUtil.getRequestIp(request), orderInfo.getOpenid(), "up-mall商品支付", orderSn, totalFee);
+            logger.info("订单模块：{{" + orderSn + "}}的微信统一下单结果=====》》》" + unifiedOrderVo);
+            if (unifiedOrderVo == null) {
+                return result.error("微信统一下单失败");
+            }
+            map.put("unifiedData", unifiedOrderVo.getData());
+            logger.info("统一下单语句执行时间=========【【【 " + (System.currentTimeMillis() - startUnifiedTime) / 1000 + " 】】】秒");
+        }else if(payType - SystemConfig.BALANCE_PAY == 0){
+            //添加余额支付
+            BigDecimal totalFeeBalance;
+            if (StringUtils.isBlank(orderInfo.getOrderSn())) {
+                totalFeeBalance = orderInfo.getTotalAmount();
+            } else {
+                totalFeeBalance = toPayOrder.getPracticalPay();
+            }
+            boolean balancePayResult = HttpClientUtil.deductUserBalance(4,false,userId,requestContext.getToken(),totalFeeBalance,orderSn);
+            if(!balancePayResult){
+                logger.info("订单模块：{{" + orderSn + "}}的余额支付结果=====》》》" + balancePayResult);
+                return result.error("余额支付失败");
+            }
+
+        }else {
+            return result.error("暂不支持该支付方式");
+        }
 
         // 订单支付超期任务
         if (StringUtils.isBlank(orderInfo.getOrderSn())) {
             taskService.addTask(new OrderUnpaidTask(orderId));
         }
-        Map<String, Object> map = new HashMap<>();
-        map.put("orderId", orderId);
-        map.put("orderSn", orderSn);
-        map.put("unifiedData", unifiedOrderVo.getData());
+
         logger.info("总下单模块执行时间=========【【【 " + (System.currentTimeMillis() - startTime) / 1000 + " 】】】秒");
         return result.success("下单成功", map);
     }
@@ -534,7 +555,6 @@ public class OrderMasterController {
             throw new RuntimeException("更新数据已失效");
         }
 
-        RequestContext requestContext = RequestContextMgr.getLocalContext();
         // 商品货品数量增加
         QueryWrapper orderDetailWrapper = new QueryWrapper();
         orderDetailWrapper.eq("order_id", id);
@@ -548,7 +568,7 @@ public class OrderMasterController {
             skuAddStockVo.setSkuId(orderGoods.getSkuId());
             skuAddStockVos.add(skuAddStockVo);
         }
-        int addSubStock = baseService.addAndSubSkuStock(skuAddStockVos, true);
+        int addSubStock = baseService.addAndSubSkuStock(skuAddStockVos, true,false,true);
         if (addSubStock - 0 == 0) {
             return result.error("扣库存失败");
         }
@@ -594,11 +614,34 @@ public class OrderMasterController {
             throw new RuntimeException("更新数据已失效");
         }
 
+        //修改销量
+        // 商品货品数量增加
+        QueryWrapper orderDetailWrapper = new QueryWrapper();
+        orderDetailWrapper.eq("order_id",order.getId());
+        List<OrderDetail> orderDetails = orderDetailService.list(orderDetailWrapper);
+        //商品数量/库存减少
+        List<SkuAddStockVo> skuAddStockVos = new ArrayList<>();
+        for(OrderDetail orderGoods : orderDetails){
+            SkuAddStockVo skuAddStockVo = new SkuAddStockVo();
+            skuAddStockVo.setCount(orderGoods.getGoodsCount());
+            skuAddStockVo.setSkuId(orderGoods.getSkuId());
+            skuAddStockVos.add(skuAddStockVo);
+        }
+        int addSubStock = baseService.addAndSubSkuStock(skuAddStockVos,true,true,false);
+        if(addSubStock - 0 == 0){
+            throw new RuntimeException("【【【【" + order.getSystemOrderNo() + "】】】】销量增加失败");
+        }
+
         RequestContext requestContext = RequestContextMgr.getLocalContext();
         if (StringUtils.isNotBlank(order.getRemark())) {
             //调用绑定接口
             int i = HttpClientUtil.agentShareBind(requestContext.getUserId(), order.getRemark());
             logger.info("代理商绑定结果: [[[["+ i +"]]]]----【【【【" + order.getSystemOrderNo() + "】】】】,用户ID:" + "【【【【" + requestContext.getUserId() + "】】】,分享人分享码:【【【" + order.getRemark() + "】】】");
+        }
+
+        // 根据 是否拼团，处理拼团业务
+        if(order.getGrouponActivityId() != null && order.getGrouponActivityId() - 0 != 0){
+            grouponOrderMasterService.doGrouponService(order.getId());
         }
 
         // 取消订单超时未支付任务
@@ -712,75 +755,4 @@ public class OrderMasterController {
             return result.error("获取物流失败");
         }
     }
-
-    // 拼团失败，退款并改变订单状态 todo
-    // 参团列表 todo
-
-    /*
-     * 模板推送 todo
-     * */
-    @GetMapping("/push")
-    public void push() {
-        //1，配置
-        WxMaDefaultConfigImpl config = new WxMaDefaultConfigImpl();
-        config.setAppid(wxProperties.getAppId());
-        config.setSecret(wxProperties.getAppSecret());
-        WxMaService wxMaService = new WxMaServiceImpl();
-        wxMaService.setWxMaConfig(config);
-
-        //2,推送消息
-        WxMaSubscribeMessage subscribeMessage = WxMaSubscribeMessage.builder()
-                .toUser("oB2fF5N8dIYFq7UtfFfIVkt6jz-E")//要推送的用户openid
-                .templateId(getTemplateNameId("success"))//模版id
-                .page("pages/index/index")  //点击跳转的页面
-                .build();
-        //3,如果是正式版发送模版消息，这里需要配置你的信息
-        //==========================================创建一个参数集合========================================================
-        ArrayList<WxMaSubscribeData> wxMaSubscribeData = new ArrayList<>();
-        //第一个内容：
-        WxMaSubscribeData wxMaSubscribeData1 = new WxMaSubscribeData();
-        wxMaSubscribeData1.setName("thing1");
-        wxMaSubscribeData1.setValue("你的车子需要挪动谢谢");
-        wxMaSubscribeData.add(wxMaSubscribeData1);
-
-        // 第二个内容：
-        WxMaSubscribeData wxMaSubscribeData2 = new WxMaSubscribeData();
-        wxMaSubscribeData2.setName("car_number2");
-        wxMaSubscribeData2.setValue("粤A12345");
-        wxMaSubscribeData.add(wxMaSubscribeData2);
-
-        // 第二个内容：
-        WxMaSubscribeData wxMaSubscribeData3 = new WxMaSubscribeData();
-        wxMaSubscribeData3.setName("date3");
-        wxMaSubscribeData3.setValue(DateUtil.DateToString(new Date(), "yyyy-MM-dd HH:mm:ss"));
-        wxMaSubscribeData.add(wxMaSubscribeData3);
-
-        //把集合给大的data
-        subscribeMessage.setData(wxMaSubscribeData);
-
-        try {
-            wxMaService.getMsgService().sendSubscribeMsg(subscribeMessage);
-        } catch (Exception e) {
-            System.out.println("推送失败：" + e.getMessage());
-            e.printStackTrace();
-        }
-
-    }
-
-
-    /**
-     * 获取模板id
-     * @param templateName
-     * @return
-     */
-    public String getTemplateNameId(String templateName) {
-        Map<String,String> template =  wxProperties.getTemplate().stream()
-                .filter(item -> item.get("name").equals(templateName)).findAny().orElse(null);
-        if(template != null){
-            return template.get("templateId");
-        }else{
-            return "";
-        }
-    }
-
 }
