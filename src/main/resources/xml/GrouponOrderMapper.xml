@@ -11,9 +11,10 @@
 		<id column="groupon_code" property="grouponCode" />
 		<id column="create_time" property="createTime" />
 		<id column="end_time" property="endTime" />
+		<id column="settlement_time" property="settlementTime" />
 	</resultMap>
 	<sql id="Base_Column_List">
-		id, groupon_order_no, groupon_activities_id, user_member_id, groupon_order_status, groupon_code, create_time, end_time
+		id, groupon_order_no, groupon_activities_id, user_member_id, groupon_order_status, groupon_code, create_time, end_time, settlement_time
 	</sql>
 	
 </mapper>

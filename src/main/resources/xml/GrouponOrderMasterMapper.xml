@@ -6,14 +6,15 @@
 		<id column="id" property="id" />
 		<id column="groupon_order_id" property="grouponOrderId" />
 		<id column="order_id" property="orderId" />
+		<id column="member_id" property="memberId" />
+		<id column="voucher" property="voucher" />
 		<id column="groupon_result" property="grouponResult" />
 		<id column="back_prize" property="backPrize" />
 		<id column="groupon_status" property="grouponStatus" />
 	</resultMap>
 	<sql id="Base_Column_List">
-		id, groupon_order_id, order_id, groupon_result, back_prize, groupon_status
+		id, groupon_order_id, order_id, member_id, voucher, groupon_result, back_prize, groupon_status
 	</sql>
-
 
 
 	<resultMap id="GrouponListMap" type="com.zsl.upmall.vo.out.GrouponListVo">

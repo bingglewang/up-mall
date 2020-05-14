@@ -59,7 +59,11 @@ public class GrouponOrder extends Model<GrouponOrder> {
 	@JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone = "GMT+8")
 	 /** 结束时间 */
 	private Date endTime;
-    
+
+	@DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+	@JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone = "GMT+8")
+	/** 结算时间 */
+	private Date settlementTime;
 
 	@Override
     protected Serializable pkVal() {

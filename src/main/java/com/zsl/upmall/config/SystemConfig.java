@@ -4,6 +4,10 @@ package com.zsl.upmall.config;
  * 系统设置
  */
 public class SystemConfig {
+    //参团凭证，redis前缀
+    public final static String GROUP_PREFIX = "GROUP_";
+    // 参团凭证，基数
+    public final static  Integer BASE_VOUCHER = 800000;
     //微信支付
     public final static Integer WEIXIN_PAY = 2;
     //余额支付
