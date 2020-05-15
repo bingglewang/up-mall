@@ -74,6 +74,17 @@ public class RedisServiceImpl implements RedisService {
         return String.valueOf(obj);
     }
 
+    @Override
+    public void zSet(String key,String value,double score){
+        stringRedisTemplate.opsForZSet().add(key,value,score);
+    }
+
+    @Override
+    public void zUpdateScore(String key,String value,double score){
+        stringRedisTemplate.opsForZSet().incrementScore(key,value,score);
+    }
+
+
     /**
      * 实现命令：HDEL key field [field ...]，删除哈希表 key 中的一个或多个指定域，不存在的域将被忽略。
      *

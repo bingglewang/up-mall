@@ -41,10 +41,15 @@ mybatis-plus:
 #微信配置
 upmall:
   wx:
-    app-id: wxf7f49d6b420460a7
-    app-secret: 3fe68e18301f0d648c9b6da4903523f3
+    app-id: wx8820721597cb9b10
+    app-secret: 32f9e34328ef46d86b3f2aa9e30b4772
     template:
+     # 拼团成功通知
      - name: success
-       templateId: TfExvyNdJ2doWTPUFeWdc-mi1fEzAJM-bu-EslrcE0E
+       templateId: qJB77iqR6URfon__3FqWqi0BtGkJ38lmas3FOeE9rgk
+     # 拼团失败通知
      - name: failed
-       templateId: 6DMosxpkmcj7ERUcCUn8qnLIKE7Oq-GdNaKp2BUwHr8
+       templateId: vy8Vx0T3m8HfYivwa48DU7uoKR5o7nyEwua9JZUzSPo
+     # 抽奖结果通知
+     - name: draw
+       templateId: HlQEcsnlMoIN2VSO5lxHrLIxu6xfHmASw0HW21XdMiM

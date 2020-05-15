@@ -21,4 +21,6 @@ public class OrderListVo {
     private String comboLevel;
     /** 商品总共数量 */
     private Integer totalProductCounts;
+    /** 是否拼团 */
+    private String isGroup;
 }

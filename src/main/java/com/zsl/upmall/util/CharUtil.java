@@ -1,6 +1,7 @@
 package com.zsl.upmall.util;
 
 import com.zsl.upmall.config.SystemConfig;
+import com.zsl.upmall.entity.GrouponOrderMaster;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -117,8 +118,5 @@ public class CharUtil {
         System.out.println("开始时间:"+DateUtil.DateToString(createTime,"yyyy-MM-dd HH:mm:ss"));
         System.out.println("结束时间:"+DateUtil.DateToString(endTime,"yyyy-MM-dd HH:mm:ss"));*/
         //System.out.println(generateJoinGroupCode(11));
-
-        System.out.println( new BigDecimal(10).divide( new BigDecimal(3),1));
-
     }
 }

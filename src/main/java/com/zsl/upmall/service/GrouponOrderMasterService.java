@@ -7,10 +7,10 @@
 package com.zsl.upmall.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.zsl.upmall.entity.GrouponActivities;
 import com.zsl.upmall.entity.GrouponOrderMaster;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.zsl.upmall.vo.out.GrouponListVo;
-import org.apache.ibatis.annotations.Param;
 
 /**
  * @Description:TODO(服务层)
@@ -27,10 +27,7 @@ public interface GrouponOrderMasterService extends IService<GrouponOrderMaster> 
      */
     IPage<GrouponListVo> getGrouponListByPage(IPage<GrouponListVo> page,Integer grouponOrderId);
 
-    /**
-     * 小程序订阅消息推送
-     */
-    void push();
+    void settlementGroup(Integer joinGroupId,GrouponActivities activityDetail);
 
     /**
      * 拼团业务处理

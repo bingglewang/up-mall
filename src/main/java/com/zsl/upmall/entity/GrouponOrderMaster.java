@@ -44,6 +44,9 @@ public class GrouponOrderMaster extends Model<GrouponOrderMaster> {
 	/** 参团份额凭证（抽奖图若购买多个，则有多个凭证，此处需分割数据） */
 	private String voucher;
 
+	/** 中奖凭证 */
+	private String winVoucher;
+
 	/** 拼团结果 */
 	private String grouponResult;
 

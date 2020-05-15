@@ -22,4 +22,8 @@ public enum GroupOrderStatusEnum {
     public Integer getCode() {
         return code;
     }
+
+    public String getDesc() {
+        return desc;
+    }
 }

@@ -25,6 +25,7 @@ import com.zsl.upmall.util.DateUtil;
 import com.zsl.upmall.util.HttpClientUtil;
 import com.zsl.upmall.util.IpUtil;
 import com.zsl.upmall.util.MoneyUtil;
+import com.zsl.upmall.vo.RefundNotifyVo;
 import com.zsl.upmall.vo.in.*;
 import com.zsl.upmall.vo.out.Logistics;
 import com.zsl.upmall.vo.out.OrderListVo;
@@ -133,6 +134,7 @@ public class OrderMasterController {
             skuDetailVo.setSkuName(orderGoods.getGoodsName());
             skuDetailVo.setSpec(orderGoods.getGoodsSpec());
             skuDetailVo.setSkuId(orderGoods.getSkuId());
+            skuDetailVo.setDesc(orderGoods.getClearingInfo());
             productDetailList.add(skuDetailVo);
         }
         orderInfo.put("productDetailList", productDetailList);
@@ -381,7 +383,6 @@ public class OrderMasterController {
         return result.success("下单成功", map);
     }
 
-
     /**
      * 生成订单号
      * @param userId
@@ -575,6 +576,40 @@ public class OrderMasterController {
 
         return result.success("修改成功");
     }
+
+    /**
+     * 微信申请退款回调接口
+     * @return 操作结果
+     */
+    @PostMapping("refund-notify")
+    public Object refundNotify(@RequestBody RefundNotifyVo refundNotifyVo) {
+        logger.info("微信申请退款回调接口回调结果===>" + refundNotifyVo);
+
+        String orderSn = refundNotifyVo.getOut_trade_no();
+
+        QueryWrapper<OrderMaster> orderQuery = new QueryWrapper<>();
+        orderQuery.eq("system_order_no", orderSn).eq("hidden", 0).last("LIMIT 1");
+        OrderMaster order = baseService.getOne(orderQuery);
+        if (order == null) {
+            return result.error("订单不存在 sn=" + orderSn);
+        }
+
+        // 检查这个订单是否已经处理过
+        if (order.getOrderStatus() - SystemConfig.ORDER_STATUS_REFUNDED != 0) {
+            return result.success("订单已经处理成功!");
+        }
+
+        // 设置订单 设置退还完成 ------>  支付成功，设置成 待发货
+        OrderMaster upOrderReceived = new OrderMaster();
+        upOrderReceived.setId(order.getId());
+        upOrderReceived.setOrderStatus(SystemConfig.ORDER_STATUS_REFUNDED);
+        upOrderReceived.setRefundFinishTime(new Date());
+        if (!baseService.updateById(upOrderReceived)) {
+            throw new RuntimeException("更新数据已失效");
+        }
+        return result.success("处理成功!");
+    }
+
 
 
     /**

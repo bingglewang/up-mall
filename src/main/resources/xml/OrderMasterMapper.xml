@@ -39,6 +39,7 @@
 		<id column="orderStatus" property="orderStatus" />
 		<id column="totalAmount" property="totalAmount" />
 		<id column="comboLevel" property="comboLevel" />
+		<id column="isGroup" property="isGroup" />
 		<collection column="orderId" property="orderListProductList" select="getOrderListProductList"></collection>
 		<collection property="totalProductCounts" column="orderId" select="getTotalProductCount"></collection>
 	</resultMap>
@@ -51,9 +52,11 @@
 			orderM.system_order_no orderSn,
 			orderM.practical_pay totalAmount,
 		    orderM.order_status orderStatus,
-		    orderM.combo_level comboLevel
+		    orderM.combo_level comboLevel,
+		    if(gom.id,'拼团','非拼团') isGroup
 		FROM
 			order_master orderM
+		LEFT JOIN groupon_order_master gom on gom.groupon_order_id = orderM.id
 		WHERE
 			orderM.member_id = #{userId}
 		and orderM.hidden = 0

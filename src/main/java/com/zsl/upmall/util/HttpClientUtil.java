@@ -3,6 +3,9 @@ package com.zsl.upmall.util;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.zsl.upmall.config.SystemConfig;
+import com.zsl.upmall.entity.GrouponOrderMaster;
+import com.zsl.upmall.entity.OrderRefund;
+import com.zsl.upmall.vo.BalacneRebateVo;
 import com.zsl.upmall.vo.in.*;
 import com.zsl.upmall.vo.out.UnifiedOrderVo;
 import com.zsl.upmall.web.OrderMasterController;
@@ -29,6 +32,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class HttpClientUtil {
     private static final Logger logger = LoggerFactory.getLogger(HttpClientUtil.class);
@@ -255,6 +259,35 @@ public class HttpClientUtil {
     }
 
     /**
+     * 奖励金余额发放
+     * @param allOrderMaster 发放列表
+     * @return
+     */
+    public static boolean deductUserBalanceBatch(List<GrouponOrderMaster> allOrderMaster){
+        logger.info("余额奖励金发放列表：{{{{{"+allOrderMaster+"}}}}}}}");
+        JSONObject params = new JSONObject();
+        List<BalacneRebateVo> balacneRebateVos = allOrderMaster.stream()
+                .map(item -> BalacneRebateVo.builder().userId(item.getMemberId()).balance(item.getBackPrize().negate()).build())
+                .collect(Collectors.toList());
+        params.put("balanceBatch",balacneRebateVos);
+        String result = doPostJson(SystemConfig.DEDUCT_USER_BALANCE_BATCH,params.toJSONString(),null);
+        logger.info("余额奖励金发放结果：【【【【【"+result+"】】】】】");
+        boolean isSuccess = false;
+        try {
+            if(StringUtils.isNotBlank(result)){
+                AddressResultVo addressResultVo = JSON.parseObject(result,AddressResultVo.class);
+                if(addressResultVo != null && "100200".equals(addressResultVo.getCode())){
+                    isSuccess = true;
+                }
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return isSuccess;
+    }
+
+
+    /**
      * 余额支付
      * @param balanceItem  余额操作类型（1邀请好友购买；2余额提现；3积分提现至余额；4用户购买商品抵扣；5退款回收余额；6拼团赠送奖励金）
      * @param onlyDeduct 是否只扣减余额
@@ -300,6 +333,37 @@ public class HttpClientUtil {
         return isSuccess;
     }
 
+    /**
+     * 订单微信退款
+     * @param orderRefund
+     * @return
+     */
+    public static boolean doRefund(OrderRefund orderRefund){
+        JSONObject refundParam = new JSONObject();
+        refundParam.put("source",SystemConfig.SYSTEM_UNIQUE_CODE);
+        refundParam.put("transaction_id",orderRefund.getTransactionId());
+        refundParam.put("out_trade_no",orderRefund.getOutTradeNo());
+        refundParam.put("out_refund_no",orderRefund.getOutRefundNo());
+        refundParam.put("total_fee",orderRefund.getTotalFee());
+        refundParam.put("refund_fee",orderRefund.getRefundFee());
+        refundParam.put("refund_desc",orderRefund.getRefundDesc());
+        refundParam.put("business_notify_url",SystemConfig.REFUND_NOTIFY_URL);
+        String result = doPostJson(SystemConfig.WEIXIN_REFUND_URL,refundParam.toJSONString(),null);
+        logger.info("订单号：【【【"+ orderRefund.getOutTradeNo() + "】】】退款结果");
+        boolean isSuccess = false;
+        try {
+            if(StringUtils.isNotBlank(result)){
+                UnifiedOrderVo unifiedOrderVo = JSON.parseObject(result,UnifiedOrderVo.class);
+                if(unifiedOrderVo != null && unifiedOrderVo.getStatusCode() - 200 == 0){
+                    isSuccess = true;
+                }
+            }
+        }catch (Exception e){
+            logger.info("订单号：【【【"+ orderRefund.getOutTradeNo() + "】】】退款失败");
+            e.printStackTrace();
+        }
+        return isSuccess;
+    }
 
     /**
      * 余额支付回调

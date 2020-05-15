@@ -4,8 +4,14 @@ package com.zsl.upmall.config;
  * 系统设置
  */
 public class SystemConfig {
+    // 活动信息ZSET 前缀
+    public final static String ACTIVE_INFO_PREFIX = "ACTIVE_";
+    // 团队信息HASH 前缀
+    public final static String GROUP_INFO_PREFIX = " GROUPON_";
+    // 未中奖，抽奖列表
+    public final static String NOT_WIN_LIST_PREFIX = "NOT_WIN_";
     //参团凭证，redis前缀
-    public final static String GROUP_PREFIX = "GROUP_";
+    public final static String GROUP_PREFIX = "JOIN_GROUP_";
     // 参团凭证，基数
     public final static  Integer BASE_VOUCHER = 800000;
     //微信支付
@@ -45,22 +51,29 @@ public class SystemConfig {
 
 
    //代理商绑定地址
-    public final static String AGENT_SHARE_BIND = "http://upmall.cntracechain.com/user/userMember/updateRelation";
+    public final static String AGENT_SHARE_BIND = "http://upmall-beta.cntracechain.com/user/userMember/updateRelation";
    //会员邀请及普通消费返利
-   public final static String MEMBER_INVITEREBATE_URL = "http://upmall.cntracechain.com/up_mall_rebate/rebate/inviteRebate";
+   public final static String MEMBER_INVITEREBATE_URL = "http://upmall-beta.cntracechain.com/up_mall_rebate/rebate/inviteRebate";
     //套餐判断
-    public final  static String IS_ORDER_PACKAGE = "http://upmall.cntracechain.com/common-goods/upMall/uncalibrated/customizedCheck";
+    public final  static String IS_ORDER_PACKAGE = "http://upmall-beta.cntracechain.com/common-goods/upMall/uncalibrated/customizedCheck";
+    //微信退款地址
+    public final static String WEIXIN_REFUND_URL = "http://zs-beta.cntracechain.com/baseService/wxpay/refund";
+    //退款回调地址
+    public final static String REFUND_NOTIFY_URL = "http://upmall-beta.cntracechain.com/order/order/refund-notify";
     //微信统一下单接口
-    //public final  static String WEIXIN_UNION_RUL = "http://zs-beta.cntracechain.com/baseService/wxpay/unifiedOrder";
-    public final  static String WEIXIN_UNION_RUL = "https://mall.cntracechain.com/baseService/wxpay/unifiedOrder";
+    public final  static String WEIXIN_UNION_RUL = "http://zs-beta.cntracechain.com/baseService/wxpay/unifiedOrder";
+    //public final  static String WEIXIN_UNION_RUL = "https://mall.cntracechain.com/baseService/wxpay/unifiedOrder";
     //微信支付回调地址
-    public final  static String BUSINESS_NOTIFY_URL = "http://upmall.cntracechain.com/order/order/pay-notify";
+    public final  static String BUSINESS_NOTIFY_URL = "http://upmall-beta.cntracechain.com/order/order/pay-notify";
     //系统标识
     public final static String SYSTEM_UNIQUE_CODE = "up-mall";
     // 扣减用户积分和余额
-    public final static String DEDUCT_USER_BALANCE = "http://upmall.cntracechain.com/user/userMember/updateUserBalanceOrIntegral";
+    public final static String DEDUCT_USER_BALANCE = "http://upmall-beta.cntracechain.com/user/userMember/updateUserBalanceOrIntegral";
+    // 批量 添加和扣减用户余额
+    public final static String DEDUCT_USER_BALANCE_BATCH = "http://upmall-beta.cntracechain.com/user/userMember/updateBatchUserBalance";
     // 添加用户余额扣减记录
-    public final static  String DEDUCT_USER_BALANCE_LOG = "http://upmall.cntracechain.com/upmall-point/balance/insert";
+    public final static  String DEDUCT_USER_BALANCE_LOG = "http://upmall-beta.cntracechain.com/upmall-point/balance/insert";
+
 
 
     public static String getStatusText(Integer status){
