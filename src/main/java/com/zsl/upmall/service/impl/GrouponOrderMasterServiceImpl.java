@@ -324,6 +324,7 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
         GrouponOrderMaster grouponOrderMaster = new GrouponOrderMaster();
         grouponOrderMaster.setMemberId(userId)
                 .setOrderId(orderId.intValue())
+                .setCreateTime(new Date())
                 .setGrouponOrderId(joinGroupId);
 
         // 插入groupon-order-master
@@ -336,7 +337,7 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
     }
 
     @Override
-    public List<MiniNoticeVo> getGroupNoticeList(Integer grouponOrderId, Integer grouponStatus) {
+    public List<MiniNoticeVo> getGroupNoticeList(Long grouponOrderId, Integer grouponStatus) {
         return this.baseMapper.getGroupNoticeList(grouponOrderId,grouponStatus);
     }
 

@@ -16,6 +16,8 @@ import java.util.List;
  **/
 @Data
 public class GrouponListVo {
+    private String groupNickName;
+    private String groupAvatar;
     private String grouponName;
     private String nickName;
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")

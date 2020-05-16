@@ -12,13 +12,16 @@
 		<id column="groupon_result" property="grouponResult" />
 		<id column="back_prize" property="backPrize" />
 		<id column="groupon_status" property="grouponStatus" />
+		<id column="create_time" property="createTime" />
 	</resultMap>
 	<sql id="Base_Column_List">
-		id, groupon_order_id, order_id, member_id, voucher, win_voucher,groupon_result, back_prize, groupon_status
+		id, groupon_order_id, order_id, member_id, voucher, win_voucher,groupon_result, back_prize, groupon_status ,create_time
 	</sql>
 
 
 	<resultMap id="GrouponListMap" type="com.zsl.upmall.vo.out.GrouponListVo">
+		<result column="groupNickName" property="groupNickName" jdbcType="VARCHAR" />
+		<result column="groupAvatar" property="groupAvatar" jdbcType="VARCHAR" />
 		<result column="grouponName" property="grouponName" jdbcType="VARCHAR" />
 		<result column="nickName" property="nickName" jdbcType="VARCHAR"/>
 		<result column="payTime" property="payTime" jdbcType="DATE"/>
@@ -27,25 +30,29 @@
 
 
 	<select id="getGrouponListByPage" resultMap="GrouponListMap">
-		SELECT
-			ga.activity_title grouponName,
-			u.nick_name nickName,
-			o.pay_time payTime,
-			d.goods_count goodsCount
-		FROM
-			`groupon_order_master` g
-		LEFT JOIN user_member u on u.id = g.member_id
-		LEFT JOIN order_master o on o.id = g.order_id
-		LEFT JOIN order_detail d on d.order_id = g.order_id
-		LEFT JOIN groupon_order go on go.id = g.groupon_order_id
-		LEFT JOIN groupon_activities ga on ga.id = go.groupon_activities_id
-		WHERE
-			g.groupon_order_id = #{grouponOrderId}
+				SELECT
+					u1.nick_name groupNickName,
+					u1.avatar groupAvatar,
+					ga.activity_title grouponName,
+					u.nick_name nickName,
+					o.pay_time payTime,
+					d.goods_count goodsCount
+				FROM
+					`groupon_order_master` g
+				LEFT JOIN user_member u on u.id = g.member_id
+				LEFT JOIN order_master o on o.id = g.order_id
+				LEFT JOIN order_detail d on d.order_id = g.order_id
+				LEFT JOIN groupon_order go on go.id = g.groupon_order_id
+			    LEFT JOIN user_member u1 on u1.id = go.user_member_id
+				LEFT JOIN groupon_activities ga on ga.id = go.groupon_activities_id
+				WHERE
+					g.groupon_order_id =  #{grouponOrderId}
 	</select>
 
 
 	<resultMap id="GroupNoticeListResultMap" type="com.zsl.upmall.vo.MiniNoticeVo">
 		<result column="orderSn" property="orderSn" jdbcType="VARCHAR" />
+		<result column="totalFee" property="totalFee" jdbcType="DECIMAL"/>
 		<result column="goodsCount" property="goodsCount" jdbcType="INTEGER"/>
 		<result column="goodsName" property="goodsName" jdbcType="VARCHAR" />
 		<result column="goodsSpc" property="goodsSpc" jdbcType="VARCHAR"/>
@@ -57,6 +64,7 @@
 	<select id="getGroupNoticeList" resultMap="GroupNoticeListResultMap">
 		SELECT
 			om.system_order_no orderSn,
+			om.practical_pay totalFee,
 			od.goods_count goodsCount,
 			od.goods_name goodsName,
 			od.goods_spec goodsSpc,

@@ -26,5 +26,5 @@ import java.util.List;
 @Mapper
 public interface GrouponOrderMasterDao extends BaseMapper<GrouponOrderMaster> {
     IPage<GrouponListVo> getGrouponListByPage(IPage<GrouponListVo> page,@Param("grouponOrderId") Integer grouponOrderId);
-    List<MiniNoticeVo> getGroupNoticeList(@Param("grouponOrderId") Integer grouponOrderId,@Param("grouponStatus") Integer grouponStatus);
+    List<MiniNoticeVo> getGroupNoticeList(@Param("grouponOrderId") Long grouponOrderId,@Param("grouponStatus") Integer grouponStatus);
 }

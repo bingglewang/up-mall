@@ -8,6 +8,7 @@ package com.zsl.upmall.web;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -30,6 +31,7 @@ import com.zsl.upmall.vo.in.*;
 import com.zsl.upmall.vo.out.Logistics;
 import com.zsl.upmall.vo.out.OrderListVo;
 import com.zsl.upmall.vo.out.UnifiedOrderVo;
+import lombok.experimental.Accessors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
@@ -80,6 +82,9 @@ public class OrderMasterController {
 
     @Autowired
     private TrackingService trackingService;
+
+    @Autowired
+    private SkuGrouponPriceService skuGrouponPriceService;
 
     @Autowired
     private GrouponOrderMasterService grouponOrderMasterService;
@@ -212,9 +217,14 @@ public class OrderMasterController {
                 if (sku.getStock() - orderInfo.getProductCount() < 0) {
                     return result.error(sku.getSkuName()+"库存不足");
                 }
-                BigDecimal skuPrice;
+                BigDecimal skuPrice = null;
                 if(orderInfo.getGrouponActivityId() - 0 != 0){
-                    skuPrice = HttpClientUtil.getSkuGroupPrice(sku.getSkuId());
+                    LambdaQueryWrapper<SkuGrouponPrice> queryWrapper = new LambdaQueryWrapper<>();
+                    queryWrapper.eq(SkuGrouponPrice::getSkuId,sku.getSkuId()).last("limit 1");
+                    SkuGrouponPrice skuGrouponPrice = skuGrouponPriceService.getOne(queryWrapper);
+                    if(skuGrouponPrice != null){
+                        skuPrice = skuGrouponPrice.getGrouponPrice();
+                    }
                 }else{
                     skuPrice = baseService.getSkuPriceByUserLevel(userId, sku.getSkuId());
                 }
@@ -465,7 +475,7 @@ public class OrderMasterController {
             //查询全部
             orderStatus = -1;
         }
-        if ((orderStatus - SystemConfig.ORDER_STATUS_RECIEVE != 0) && (orderStatus - SystemConfig.ORDER_STATUS_WAIT_PAY != 0) && (orderStatus - SystemConfig.ORDER_STATUS_CANCLE != 0) && (orderStatus - SystemConfig.ORDER_STATUS_FINISH != 0)) {
+        if ((orderStatus - SystemConfig.ORDER_STATUS_RECIEVE != 0) && (orderStatus - SystemConfig.ORDER_STATUS_WAIT_PAY != 0) && (orderStatus - SystemConfig.ORDER_STATUS_CANCLE != 0) && (orderStatus - SystemConfig.ORDER_STATUS_FINISH != 0) && (orderStatus - SystemConfig.ORDER_STATUS_DELIVER != 0)&& (orderStatus - SystemConfig.ORDER_STATUS_REFUNDINGD != 0)&& (orderStatus - SystemConfig.ORDER_STATUS_REFUNDED != 0)) {
             //查询全部
             orderStatus = -1;
         }

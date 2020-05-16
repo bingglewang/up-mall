@@ -1,7 +1,13 @@
 package com.zsl.upmall.task;
 
+import com.zsl.upmall.service.GrouponOrderMasterService;
+import com.zsl.upmall.util.BeanUtil;
+import com.zsl.upmall.vo.GroupOrderStatusEnum;
+import com.zsl.upmall.vo.MiniNoticeVo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 /**
  * @ClassName GroupNoticeUnpaidTask
@@ -28,6 +34,27 @@ public class GroupNoticeUnpaidTask extends Task {
 
     @Override
     public void run() {
-
+        logger.info("拼团结果通知开始---【【【" + this.joinGroupId+"】】】");
+        GrouponOrderMasterService grouponOrderMasterService = BeanUtil.getBean(GrouponOrderMasterService.class);
+        //场景说明抽奖结果通知
+        if(this.type - 0 == 0){
+            List<MiniNoticeVo> miniNoticeVos = grouponOrderMasterService.getGroupNoticeList(this.joinGroupId,GroupOrderStatusEnum.SUCCESS.getCode());
+            for(MiniNoticeVo miniNoticeVo : miniNoticeVos){
+                grouponOrderMasterService.push(miniNoticeVo.getOpenId(),"index",miniNoticeVo.getGoodsName()+miniNoticeVo.getGoodsSpc(),miniNoticeVo.getOrderSn(),miniNoticeVo.getTotalFee()+"");
+            }
+        }else if(this.type - 1 == 0){
+            //场景说明拼团失败通知
+            List<MiniNoticeVo> miniNoticeVos = grouponOrderMasterService.getGroupNoticeList(this.joinGroupId,GroupOrderStatusEnum.FAILED.getCode());
+            for(MiniNoticeVo miniNoticeVo : miniNoticeVos){
+                grouponOrderMasterService.push1(miniNoticeVo.getOpenId(),"index",miniNoticeVo.getGoodsName()+miniNoticeVo.getGoodsSpc(),miniNoticeVo.getGoodsPrice()+"",miniNoticeVo.getTotalFee()+"","拼团失败");
+            }
+        }else if(this.type - 2 == 0){
+            //场景说明拼团成功通知
+            List<MiniNoticeVo> miniNoticeVos = grouponOrderMasterService.getGroupNoticeList(this.joinGroupId,GroupOrderStatusEnum.SUCCESS.getCode());
+            for(MiniNoticeVo miniNoticeVo : miniNoticeVos){
+                grouponOrderMasterService.push2(miniNoticeVo.getOpenId(),"index",miniNoticeVo.getGoodsName()+miniNoticeVo.getGoodsSpc(),miniNoticeVo.getGoodsPrice()+"","拼团成功");
+            }
+        }
+        logger.info("拼团结果通知开始---【【【" + this.joinGroupId+"】】】");
     }
 }

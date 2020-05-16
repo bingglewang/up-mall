@@ -56,7 +56,7 @@
 		    if(gom.id,'拼团','非拼团') isGroup
 		FROM
 			order_master orderM
-		LEFT JOIN groupon_order_master gom on gom.groupon_order_id = orderM.id
+		LEFT JOIN groupon_order_master gom on gom.order_id = orderM.id
 		WHERE
 			orderM.member_id = #{userId}
 		and orderM.hidden = 0

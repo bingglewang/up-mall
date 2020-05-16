@@ -68,5 +68,5 @@ public interface GrouponOrderMasterService extends IService<GrouponOrderMaster> 
      */
     void doGrouponService(Long orderId,Integer userId);
 
-    List<MiniNoticeVo> getGroupNoticeList(Integer grouponOrderId,Integer grouponStatus);
+    List<MiniNoticeVo> getGroupNoticeList(Long grouponOrderId,Integer grouponStatus);
 }

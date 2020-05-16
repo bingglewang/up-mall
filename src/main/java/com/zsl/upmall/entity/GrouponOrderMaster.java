@@ -8,11 +8,15 @@ package com.zsl.upmall.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.extension.activerecord.Model;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
+import org.springframework.format.annotation.DateTimeFormat;
+
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.util.Date;
 
 /**
  * @Description:TODO(实体类)
@@ -55,6 +59,11 @@ public class GrouponOrderMaster extends Model<GrouponOrderMaster> {
 
 	/** 拼团状态（0拼团中，1拼团成功，2拼团失败） */
 	private Integer grouponStatus;
+
+	@DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+	@JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone = "GMT+8")
+	/** 参团时间 */
+	private Date createTime;
 
 
 	@Override

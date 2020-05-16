@@ -81,7 +81,7 @@ public class RedisServiceImpl implements RedisService {
 
     @Override
     public void zUpdateScore(String key,String value,double score){
-        stringRedisTemplate.opsForZSet().incrementScore(key,value,score);
+        stringRedisTemplate.opsForZSet().add(key,value,score);
     }
 
 
