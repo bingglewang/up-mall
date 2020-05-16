@@ -20,11 +20,13 @@ import com.zsl.upmall.context.RequestContextMgr;
 import com.zsl.upmall.entity.*;
 import com.zsl.upmall.mapper.GrouponOrderMasterDao;
 import com.zsl.upmall.service.*;
+import com.zsl.upmall.task.GroupNoticeUnpaidTask;
 import com.zsl.upmall.task.GrouponOrderUnpaidTask;
 import com.zsl.upmall.task.TaskService;
 import com.zsl.upmall.util.*;
 import com.zsl.upmall.vo.BalacneRebateVo;
 import com.zsl.upmall.vo.GroupOrderStatusEnum;
+import com.zsl.upmall.vo.MiniNoticeVo;
 import com.zsl.upmall.vo.out.GrouponListVo;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -93,6 +95,7 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
      * @param orderSn 订单编号
      * @param totalFee 支付金额
      */
+    @Override
     public void push(String openId,String pages,String goodName, String orderSn,String totalFee) {
         //1，配置
         WxMaDefaultConfigImpl config = new WxMaDefaultConfigImpl();
@@ -147,6 +150,7 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
      * @param refundFee 退款金额
      * @param notice 温馨提示
      */
+    @Override
     public void push1(String openId,String pages,String goodName, String pinPrice,String refundFee,String notice) {
         //1，配置
         WxMaDefaultConfigImpl config = new WxMaDefaultConfigImpl();
@@ -206,6 +210,7 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
      * @param pinPrice 拼团价格
      * @param notice 温馨提示
      */
+    @Override
     public void push2(String openId,String pages,String goodName,String pinPrice,String notice) {
         //1，配置
         WxMaDefaultConfigImpl config = new WxMaDefaultConfigImpl();
@@ -252,8 +257,7 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
     }
 
     @Override
-    public void doGrouponService(Long orderId) {
-        RequestContext requestContext = RequestContextMgr.getLocalContext();
+    public void doGrouponService(Long orderId,Integer userId) {
         //订单信息
         OrderMaster orderDetail = orderMasterService.getById(orderId);
         Integer grouponActivityId = orderDetail.getGrouponActivityId();
@@ -292,18 +296,18 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
                     .setEndTime(endTime)
                     .setGrouponActivitiesId(grouponActivityId)
                     .setGrouponCode(CharUtil.generateGrouponCode())
-                    .setGrouponOrderNo(CharUtil.getCode(requestContext.getUserId(), activityDetail.getMode()))
+                    .setGrouponOrderNo(CharUtil.getCode(userId, activityDetail.getMode()))
                     .setGrouponOrderStatus(GroupOrderStatusEnum.HAVING.getCode())
-                    .setUserMemberId(requestContext.getUserId());
+                    .setUserMemberId(userId);
             if (!grouponOrderService.save(grouponOrder)) {
-                logger.info("拼团主订单【【【" + grouponOrder.getGrouponOrderNo() + "】】】插入失败，用户id：【【【" + requestContext.getUserId() + "】】】");
+                logger.info("拼团主订单【【【" + grouponOrder.getGrouponOrderNo() + "】】】插入失败，用户id：【【【" + userId + "】】】");
                 return;
             }
             joinGroupId = grouponOrder.getId();
             //开启延时队列 定时
             taskService.addTask(new GrouponOrderUnpaidTask(joinGroupId,activityDetail));
 
-            doRedisGroupInfo(true,orderId,activityDetail.getMode(),grouponActivityId,activityDetail.getGroupCount(),joinGroupId,requestContext.getUserId());
+            doRedisGroupInfo(true,orderId,activityDetail.getMode(),grouponActivityId,activityDetail.getGroupCount(),joinGroupId,userId);
             //生成凭证放redis
             List<String> vouchers = CharUtil.generateJoinGroupCode(activityDetail.getGroupCount());
             redisService.lpushList(SystemConfig.GROUP_PREFIX + joinGroupId, vouchers);
@@ -315,20 +319,25 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
             }
         }else{
             // 存放拼团，活动redis 信息 （团队信息HASH: GROUPON_团队ID  用户ID  参与份额）
-            doRedisGroupInfo(false,orderId,activityDetail.getMode(),grouponActivityId,activityDetail.getGroupCount(),joinGroupId,requestContext.getUserId());
+            doRedisGroupInfo(false,orderId,activityDetail.getMode(),grouponActivityId,activityDetail.getGroupCount(),joinGroupId,userId);
         }
         GrouponOrderMaster grouponOrderMaster = new GrouponOrderMaster();
-        grouponOrderMaster.setMemberId(requestContext.getUserId())
+        grouponOrderMaster.setMemberId(userId)
                 .setOrderId(orderId.intValue())
                 .setGrouponOrderId(joinGroupId);
 
         // 插入groupon-order-master
-        insertGroupOrderMaster(grouponOrderMaster, joinGroupId, activityDetail.getMode(), requestContext.getUserId(), orderId);
+        insertGroupOrderMaster(grouponOrderMaster, joinGroupId, activityDetail.getMode(), userId, orderId);
 
         //如果符合条件则 结算
         if (redisService.lsize(SystemConfig.GROUP_PREFIX + joinGroupId) - 0 == 0) {
             settlementGroup(joinGroupId,activityDetail);
         }
+    }
+
+    @Override
+    public List<MiniNoticeVo> getGroupNoticeList(Integer grouponOrderId, Integer grouponStatus) {
+        return this.baseMapper.getGroupNoticeList(grouponOrderId,grouponStatus);
     }
 
 
@@ -368,6 +377,7 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
                     }).collect(Collectors.toList());
             orderRefundService.saveBatch(refundList);
             // todo 失败通知
+            taskService.addTask(new GroupNoticeUnpaidTask(joinGroupId,60,GroupOrderStatusEnum.FAILED.getCode(),1));
             //余额退款扫描
             refundToBalance();
             return ;
@@ -391,6 +401,7 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
             updateGroupOrderMasterQuery.eq(GrouponOrderMaster::getGrouponOrderId, joinGroupId);
             grouponOrderMasterService.update(grouponOrderMasterUpdate, updateGroupOrderMasterQuery);
             //成功通知 todo
+            taskService.addTask(new GroupNoticeUnpaidTask(joinGroupId,60,GroupOrderStatusEnum.SUCCESS.getCode(),2));
         } else if (activityDetail.getMode() - 1 == 0) {
             final int final_joinGroupId = joinGroupId;
             // 获得 抽奖凭证(列表)（副本弹出来
@@ -435,7 +446,6 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
                 if (StringUtils.isNotBlank(win_voucher_str)) {
                     updateItem.setGrouponStatus(GroupOrderStatusEnum.SUCCESS.getCode());
                     updateItem.setGrouponResult(GroupOrderStatusEnum.SUCCESS.getDesc());
-                    //中奖通知 todo
                 } else {
                     updateItem.setGrouponStatus(GroupOrderStatusEnum.FAILED.getCode());
                     updateItem.setGrouponResult(GroupOrderStatusEnum.FAILED.getDesc());
@@ -452,6 +462,9 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
             }
             //修改group-order-master 状态
             grouponOrderMasterService.updateBatchById(updateOrderMasterList);
+
+            //中奖通知 todo
+            taskService.addTask(new GroupNoticeUnpaidTask(joinGroupId,60,GroupOrderStatusEnum.SUCCESS.getCode(),0));
 
             // 根据返利字段进行返利  (退款)
             allOrderMaster = allOrderMaster.stream()
@@ -566,21 +579,21 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
             if (mode - 0 == 0) {
                 BigDecimal score = new BigDecimal(1).divide(new BigDecimal(grouponCount)).multiply(new BigDecimal(100));
                 redisService.zSet(SystemConfig.ACTIVE_INFO_PREFIX + grouponActivityId, joinGroupId.toString(), score.doubleValue());
-                redisService.hset(SystemConfig.GROUP_INFO_PREFIX + joinGroupId, userId.toString(), 1);
+                redisService.hset(SystemConfig.GROUP_INFO_PREFIX + joinGroupId, userId+"", 1+"");
             } else if (mode - 1 == 0) {
                 BigDecimal score = new BigDecimal(orderDetail.getGoodsCount()).divide(new BigDecimal(grouponCount)).multiply(new BigDecimal(100));
                 redisService.zSet(SystemConfig.ACTIVE_INFO_PREFIX + grouponActivityId, joinGroupId.toString(), score.doubleValue());
-                redisService.hset(SystemConfig.GROUP_INFO_PREFIX + joinGroupId, userId.toString(), orderDetail.getGoodsCount());
+                redisService.hset(SystemConfig.GROUP_INFO_PREFIX + joinGroupId, userId+"", orderDetail.getGoodsCount()+"");
             }
         }else{
             if(mode - 0 == 0){
-                redisService.hset(SystemConfig.GROUP_INFO_PREFIX + joinGroupId, userId.toString(), 1);
+                redisService.hset(SystemConfig.GROUP_INFO_PREFIX + joinGroupId, userId.toString(), 1+"");
             }else if(mode - 1 == 0){
                 String old = redisService.hget(SystemConfig.GROUP_INFO_PREFIX + joinGroupId,userId.toString());
                 if(StringUtils.isBlank(old)){
                        old = "0";
                 }
-                redisService.hset(SystemConfig.GROUP_INFO_PREFIX + joinGroupId, userId.toString(),  orderDetail.getGoodsCount() + Integer.valueOf(old));
+                redisService.hset(SystemConfig.GROUP_INFO_PREFIX + joinGroupId, userId.toString(),  orderDetail.getGoodsCount() + Integer.valueOf(old)+"");
             }
             Map<Object, Object> hall = redisService.hgetall(SystemConfig.GROUP_INFO_PREFIX + joinGroupId);
             BigDecimal score = new BigDecimal( hall.size()).divide(new BigDecimal(grouponCount)).multiply(new BigDecimal(100));
@@ -599,9 +612,9 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
         if (mode - 0 == 0) {
             // 判断用户是否参加当前团队，已参加则不再新增数据
             LambdaQueryWrapper<GrouponOrderMaster> queryWrapper = new LambdaQueryWrapper<>();
-            queryWrapper.eq(GrouponOrderMaster::getMemberId, userId);
+            queryWrapper.eq(GrouponOrderMaster::getMemberId, userId).eq(GrouponOrderMaster::getGrouponOrderId,groupOrderId);
             GrouponOrderMaster isExistOrderMaster = grouponOrderMasterService.getOne(queryWrapper);
-            if (isExistOrderMaster == null) {
+            if (isExistOrderMaster != null) {
                 return;
             }
             //普通

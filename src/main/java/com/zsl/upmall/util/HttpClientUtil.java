@@ -126,6 +126,26 @@ public class HttpClientUtil {
         return doPost(url, null);
     }
 
+    /**
+     * 获取sku拼团价格
+     * @param skuId
+     * @return
+     */
+    public static BigDecimal getSkuGroupPrice(Integer skuId){
+        String skuResult =  HttpClientUtil.doGet(SystemConfig.SKU_GROUP_PRICE+skuId);
+        BigDecimal result = null;
+        try {
+            if(StringUtils.isNotBlank(skuResult)){
+                SkuGroupPriceResult skuObject = JSON.parseObject(skuResult,SkuGroupPriceResult.class);
+                if(skuObject != null && skuObject.getCode() - 200200 == 0){
+                    result = skuObject.getData();
+                }
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return result;
+    }
 
     /**
      * 获取sku详情

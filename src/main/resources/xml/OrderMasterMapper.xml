@@ -140,7 +140,7 @@
 		SET
 		<if test="isSaleVolume">
 			sales_volume =
-			<foreach collection="list" item="item" open=" CASE id " close=" ELSE sales_volume END,">
+			<foreach collection="list" item="item" open=" CASE id " close=" ELSE sales_volume END">
 				WHEN #{item.skuId} THEN (sales_volume
 				<if test="!action">+</if>
 				<if test="action">-</if>
@@ -148,7 +148,8 @@
 			</foreach>
 		</if>
 		<if test="isStock">
-			stock =
+		   <if test="isSaleVolume">,</if>
+			 stock =
 				<foreach collection="list" item="item" open=" CASE id " close=" ELSE stock END">
 					WHEN #{item.skuId} THEN (stock
 					<if test="!action">-</if>

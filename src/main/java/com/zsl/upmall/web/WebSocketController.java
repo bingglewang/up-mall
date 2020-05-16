@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @Version 1.0
  **/
 @RestController
-@RequestMapping("msg")
+@RequestMapping("test")
 public class WebSocketController {
 
     protected JsonResult result = new JsonResult();

@@ -43,4 +43,33 @@
 			g.groupon_order_id = #{grouponOrderId}
 	</select>
 
+
+	<resultMap id="GroupNoticeListResultMap" type="com.zsl.upmall.vo.MiniNoticeVo">
+		<result column="orderSn" property="orderSn" jdbcType="VARCHAR" />
+		<result column="goodsCount" property="goodsCount" jdbcType="INTEGER"/>
+		<result column="goodsName" property="goodsName" jdbcType="VARCHAR" />
+		<result column="goodsSpc" property="goodsSpc" jdbcType="VARCHAR"/>
+		<result column="openId" property="openId" jdbcType="VARCHAR"/>
+		<result column="goodsPrice" property="goodsPrice" jdbcType="DECIMAL"/>
+	</resultMap>
+
+
+	<select id="getGroupNoticeList" resultMap="GroupNoticeListResultMap">
+		SELECT
+			om.system_order_no orderSn,
+			od.goods_count goodsCount,
+			od.goods_name goodsName,
+			od.goods_spec goodsSpc,
+			od.goods_price goodsPrice,
+			um.weixin_openid openId
+		FROM
+			groupon_order_master gom
+		LEFT JOIN order_master om on om.id = gom.order_id
+		LEFT JOIN order_detail od on od.order_id = om.id
+		LEFT JOIN user_member um on um.id = gom.member_id
+		WHERE
+			gom.groupon_order_id = #{grouponOrderId}
+		and gom.groupon_status = #{grouponStatus}
+	</select>
+
 </mapper>

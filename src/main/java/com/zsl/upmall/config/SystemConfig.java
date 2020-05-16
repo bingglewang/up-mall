@@ -7,7 +7,7 @@ public class SystemConfig {
     // 活动信息ZSET 前缀
     public final static String ACTIVE_INFO_PREFIX = "ACTIVE_";
     // 团队信息HASH 前缀
-    public final static String GROUP_INFO_PREFIX = " GROUPON_";
+    public final static String GROUP_INFO_PREFIX = "GROUPON_";
     // 未中奖，抽奖列表
     public final static String NOT_WIN_LIST_PREFIX = "NOT_WIN_";
     //参团凭证，redis前缀
@@ -73,7 +73,8 @@ public class SystemConfig {
     public final static String DEDUCT_USER_BALANCE_BATCH = "http://upmall-beta.cntracechain.com/user/userMember/updateBatchUserBalance";
     // 添加用户余额扣减记录
     public final static  String DEDUCT_USER_BALANCE_LOG = "http://upmall-beta.cntracechain.com/upmall-point/balance/insert";
-
+    //sku 拼团价格
+    public final static String  SKU_GROUP_PRICE = "http://upmall-beta.cntracechain.com/common-goods/upMall/groupon/skuPrice/";
 
 
     public static String getStatusText(Integer status){

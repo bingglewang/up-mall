@@ -31,6 +31,7 @@ import com.zsl.upmall.vo.out.Logistics;
 import com.zsl.upmall.vo.out.OrderListVo;
 import com.zsl.upmall.vo.out.UnifiedOrderVo;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -211,7 +212,13 @@ public class OrderMasterController {
                 if (sku.getStock() - orderInfo.getProductCount() < 0) {
                     return result.error(sku.getSkuName()+"库存不足");
                 }
-                BigDecimal skuPrice = baseService.getSkuPriceByUserLevel(userId, sku.getSkuId());
+                BigDecimal skuPrice;
+                if(orderInfo.getGrouponActivityId() - 0 != 0){
+                    skuPrice = HttpClientUtil.getSkuGroupPrice(sku.getSkuId());
+                }else{
+                    skuPrice = baseService.getSkuPriceByUserLevel(userId, sku.getSkuId());
+                }
+
                 if (skuPrice == null) {
                     return result.error(sku.getSkuName()+"价格错误");
                 }
@@ -322,7 +329,7 @@ public class OrderMasterController {
                 orderDetailService.save(orderDetail);
             }
 
-            int addSubStock = baseService.addAndSubSkuStock(skuAddStockVos, false,false,true);
+            int addSubStock = baseService.addAndSubSkuStock(skuAddStockVos, true,false,true);
             if (addSubStock - 0 == 0) {
                 OrderMaster updateHidden = new OrderMaster();
                 updateHidden.setId(order.getId());
@@ -662,21 +669,20 @@ public class OrderMasterController {
             skuAddStockVo.setSkuId(orderGoods.getSkuId());
             skuAddStockVos.add(skuAddStockVo);
         }
-        int addSubStock = baseService.addAndSubSkuStock(skuAddStockVos,true,true,false);
+        int addSubStock = baseService.addAndSubSkuStock(skuAddStockVos,false,true,false);
         if(addSubStock - 0 == 0){
             throw new RuntimeException("【【【【" + order.getSystemOrderNo() + "】】】】销量增加失败");
         }
 
-        RequestContext requestContext = RequestContextMgr.getLocalContext();
         if (StringUtils.isNotBlank(order.getRemark())) {
             //调用绑定接口
-            int i = HttpClientUtil.agentShareBind(requestContext.getUserId(), order.getRemark());
-            logger.info("代理商绑定结果: [[[["+ i +"]]]]----【【【【" + order.getSystemOrderNo() + "】】】】,用户ID:" + "【【【【" + requestContext.getUserId() + "】】】,分享人分享码:【【【" + order.getRemark() + "】】】");
+            int i = HttpClientUtil.agentShareBind(order.getMemberId(), order.getRemark());
+            logger.info("代理商绑定结果: [[[["+ i +"]]]]----【【【【" + order.getSystemOrderNo() + "】】】】,用户ID:" + "【【【【" + order.getMemberId() + "】】】,分享人分享码:【【【" + order.getRemark() + "】】】");
         }
 
         // 根据 是否拼团，处理拼团业务
         if(order.getGrouponActivityId() != null && order.getGrouponActivityId() - 0 != 0){
-            grouponOrderMasterService.doGrouponService(order.getId());
+            grouponOrderMasterService.doGrouponService(order.getId(),order.getMemberId());
         }
 
         // 取消订单超时未支付任务

@@ -8,10 +8,13 @@ package com.zsl.upmall.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.zsl.upmall.vo.MiniNoticeVo;
 import com.zsl.upmall.vo.out.GrouponListVo;
 import org.apache.ibatis.annotations.Mapper;
 import com.zsl.upmall.entity.GrouponOrderMaster;
 import org.apache.ibatis.annotations.Param;
+
+import java.util.List;
 
 /**   
  * @Description:TODO(数据访问层)
@@ -23,4 +26,5 @@ import org.apache.ibatis.annotations.Param;
 @Mapper
 public interface GrouponOrderMasterDao extends BaseMapper<GrouponOrderMaster> {
     IPage<GrouponListVo> getGrouponListByPage(IPage<GrouponListVo> page,@Param("grouponOrderId") Integer grouponOrderId);
+    List<MiniNoticeVo> getGroupNoticeList(@Param("grouponOrderId") Integer grouponOrderId,@Param("grouponStatus") Integer grouponStatus);
 }

@@ -30,4 +30,11 @@ public class GrouponOrderMasterController {
         Page<GrouponListVo> page = new Page(param.getPageNum(), param.getPageSize());
         return result.success(grouponOrderMasterService.getGrouponListByPage(page,grouponOrderId));
     }
+
+    @GetMapping("test")
+    public JsonResult test(Long orderId,Integer userId){
+        JsonResult result = new JsonResult();
+        grouponOrderMasterService.doGrouponService(orderId,userId);
+        return result.success(null);
+    }
 }

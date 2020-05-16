@@ -13,6 +13,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
         // 添加拦截器
         registry.addInterceptor(centerAdminLoginInterceptor()).addPathPatterns("/**")
                 .excludePathPatterns("/order/pay-notify/**")
+                .excludePathPatterns("/groupon/test/**")
                 .excludePathPatterns("/test/send/**")
                 .excludePathPatterns("/order/push/**");
     }
