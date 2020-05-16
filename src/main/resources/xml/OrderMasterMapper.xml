@@ -53,7 +53,7 @@
 			orderM.practical_pay totalAmount,
 		    orderM.order_status orderStatus,
 		    orderM.combo_level comboLevel,
-		    if(gom.id,'拼团','非拼团') isGroup
+		    if(gom.id,gom.groupon_status,-1) isGroup
 		FROM
 			order_master orderM
 		LEFT JOIN groupon_order_master gom on gom.order_id = orderM.id
