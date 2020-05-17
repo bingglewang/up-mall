@@ -579,26 +579,26 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
         if(isFirst){
             if (mode - 0 == 0) {
                 BigDecimal score = new BigDecimal(1).divide(new BigDecimal(grouponCount)).multiply(new BigDecimal(100));
-                redisService.zSet(SystemConfig.ACTIVE_INFO_PREFIX + grouponActivityId, joinGroupId.toString(), score.doubleValue());
+                redisService.zSet(SystemConfig.ACTIVE_INFO_PREFIX + grouponActivityId, joinGroupId+"", score.doubleValue());
                 redisService.hset(SystemConfig.GROUP_INFO_PREFIX + joinGroupId, userId+"", 1+"");
             } else if (mode - 1 == 0) {
                 BigDecimal score = new BigDecimal(orderDetail.getGoodsCount()).divide(new BigDecimal(grouponCount)).multiply(new BigDecimal(100));
-                redisService.zSet(SystemConfig.ACTIVE_INFO_PREFIX + grouponActivityId, joinGroupId.toString(), score.doubleValue());
+                redisService.zSet(SystemConfig.ACTIVE_INFO_PREFIX + grouponActivityId, joinGroupId+"", score.doubleValue());
                 redisService.hset(SystemConfig.GROUP_INFO_PREFIX + joinGroupId, userId+"", orderDetail.getGoodsCount()+"");
             }
         }else{
             if(mode - 0 == 0){
-                redisService.hset(SystemConfig.GROUP_INFO_PREFIX + joinGroupId, userId.toString(), 1+"");
+                redisService.hset(SystemConfig.GROUP_INFO_PREFIX + joinGroupId, userId+"", 1+"");
             }else if(mode - 1 == 0){
-                String old = redisService.hget(SystemConfig.GROUP_INFO_PREFIX + joinGroupId,userId.toString());
+                String old = redisService.hget(SystemConfig.GROUP_INFO_PREFIX + joinGroupId,userId+"");
                 if(StringUtils.isBlank(old)){
                        old = "0";
                 }
-                redisService.hset(SystemConfig.GROUP_INFO_PREFIX + joinGroupId, userId.toString(),  orderDetail.getGoodsCount() + Integer.valueOf(old)+"");
+                redisService.hset(SystemConfig.GROUP_INFO_PREFIX + joinGroupId, userId+"",  orderDetail.getGoodsCount() + Integer.valueOf(old)+"");
             }
             Map<Object, Object> hall = redisService.hgetall(SystemConfig.GROUP_INFO_PREFIX + joinGroupId);
             BigDecimal score = new BigDecimal( hall.size()).divide(new BigDecimal(grouponCount)).multiply(new BigDecimal(100));
-            redisService.zUpdateScore(SystemConfig.ACTIVE_INFO_PREFIX + grouponActivityId, joinGroupId.toString(), score.doubleValue());
+            redisService.zUpdateScore(SystemConfig.ACTIVE_INFO_PREFIX + grouponActivityId, joinGroupId+"", score.doubleValue());
         }
     }
 
