@@ -14,5 +14,5 @@ import java.util.List;
  **/
 @Data
 public class BalanceRefundListVo {
-    private List<GrouponOrderMaster> balanceList;
+    private List<GrouponOrderMaster> balanceBatch;
 }

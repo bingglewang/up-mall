@@ -397,7 +397,7 @@ public class HttpClientUtil {
     public static void doBalancePayNotify(List<GrouponOrderMaster> allOrderMaster){
         //回调 改变订单状态
         JSONObject paramsNotify = new JSONObject();
-        paramsNotify.put("balanceList",allOrderMaster);
+        paramsNotify.put("balanceBatch",allOrderMaster);
         String notifyResult = doPostJson(SystemConfig.BALANCE_NOTIFY_URL,paramsNotify.toJSONString(),null);
         logger.info("余额支付回调结果：allOrderMaster【【【"+allOrderMaster+"】】】"+"=====》》{{{"+notifyResult+"}}}");
     }

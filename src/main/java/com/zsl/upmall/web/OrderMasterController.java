@@ -634,9 +634,9 @@ public class OrderMasterController {
      * @return 操作结果
      */
     @PostMapping("balance-notify")
-    public Object balanceNotify(@RequestBody BalanceRefundListVo balanceRefundListVo) {
-        logger.info("微信申请退款回调接口回调结果===余额支付回调>" + balanceRefundListVo);
-        List<GrouponOrderMaster> allOrderMaster = balanceRefundListVo.getBalanceList();
+    public Object balanceNotify(@RequestBody BalanceRefundListVo list) {
+        logger.info("微信申请退款回调接口回调结果===余额支付回调>" + list);
+        List<GrouponOrderMaster> allOrderMaster = list.getBalanceBatch();
         for(GrouponOrderMaster grouponOrderMaster : allOrderMaster){
             OrderMaster order = baseService.getById(grouponOrderMaster.getOrderId());
             if (order == null) {
