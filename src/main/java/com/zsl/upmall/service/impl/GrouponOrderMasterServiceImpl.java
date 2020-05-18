@@ -286,7 +286,7 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
         if (joinGroupId - 0 == 0) {
             //自己
             GrouponOrder grouponOrder = new GrouponOrder();
-            LocalDateTime endDate = nowDate.plusHours(activityDetail.getExpireHour());
+            LocalDateTime endDate = nowDate.plusMinutes(activityDetail.getExpireHour());
             //开始时间
             Date createTime = Date.from(nowDate.atZone(ZoneId.systemDefault()).toInstant());
             //结束时间
@@ -315,11 +315,10 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
             //生成凭证放redis
             List<String> vouchers = CharUtil.generateJoinGroupCode(activityDetail.getGroupCount());
             redisService.lpushList(SystemConfig.GROUP_PREFIX + joinGroupId, vouchers);
-            redisService.expire(SystemConfig.GROUP_PREFIX + joinGroupId, activityDetail.getExpireHour() * 60 * 60);
             //如果抽奖团存放一个副本
             if (activityDetail.getMode() - 1 == 0) {
+                Collections.shuffle(vouchers);
                 redisService.lpushList("CP_" + SystemConfig.GROUP_PREFIX + joinGroupId, vouchers);
-                redisService.expire("CP_" + SystemConfig.GROUP_PREFIX + joinGroupId, activityDetail.getExpireHour() * 60 * 60);
             }
 
         }else{
@@ -370,6 +369,9 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
             return ;
         }
 
+        //删除redis zset group
+        redisService.removeZset(SystemConfig.ACTIVE_INFO_PREFIX + activityDetail.getId(), joinGroupId+"");
+
 
         if(redisService.lsize(SystemConfig.GROUP_PREFIX + joinGroupId) - 0 > 0){
             // 时间到了，但是团没满，则 主订单拼团失败 ，退款
@@ -409,12 +411,23 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
 
         //开始结算 修改子订单状态
         if (activityDetail.getMode() - 0 == 0) {
-            GrouponOrderMaster grouponOrderMasterUpdate = new GrouponOrderMaster();
-            grouponOrderMasterUpdate.setGrouponStatus(GroupOrderStatusEnum.SUCCESS.getCode());
-            grouponOrderMasterUpdate.setGrouponResult(GroupOrderStatusEnum.SUCCESS.getDesc());
             LambdaQueryWrapper<GrouponOrderMaster> updateGroupOrderMasterQuery = new LambdaQueryWrapper<>();
             updateGroupOrderMasterQuery.eq(GrouponOrderMaster::getGrouponOrderId, joinGroupId);
-            grouponOrderMasterService.update(grouponOrderMasterUpdate, updateGroupOrderMasterQuery);
+            List<GrouponOrderMaster> grouponOrderMasterList = grouponOrderMasterService.list(updateGroupOrderMasterQuery);
+            List<GrouponOrderMaster> updateList = new ArrayList<>();
+            for(GrouponOrderMaster grouponOrderMaster : grouponOrderMasterList){
+                GrouponOrderMaster grouponOrderMasterUpdate = new GrouponOrderMaster();
+                grouponOrderMasterUpdate.setId(grouponOrderMaster.getId());
+                grouponOrderMasterUpdate.setGrouponStatus(GroupOrderStatusEnum.SUCCESS.getCode());
+                LambdaQueryWrapper<OrderDetail> detailLamb = new LambdaQueryWrapper<>();
+                detailLamb.eq(OrderDetail::getOrderId,grouponOrderMaster.getOrderId()).last("limit 1");
+                OrderDetail orderDetail = orderDetailService.getOne(detailLamb);
+                if(orderDetail != null){
+                    grouponOrderMasterUpdate.setGrouponResult(orderDetail.getGoodsName()+" *"+orderDetail.getGoodsCount());
+                }
+                updateList.add(grouponOrderMasterUpdate);
+            }
+            grouponOrderMasterService.updateBatchById(updateList);
             //成功通知 todo
             taskService.addTask(new GroupNoticeUnpaidTask(joinGroupId,60,GroupOrderStatusEnum.SUCCESS.getCode(),2));
         } else if (activityDetail.getMode() - 1 == 0) {
@@ -441,6 +454,7 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
             List<Integer> splitOrderIds = new ArrayList<>();
             for (GrouponOrderMaster item : allOrderMaster) {
                 GrouponOrderMaster updateItem = new GrouponOrderMaster();
+                BeanUtils.copyProperties(item,updateItem);
                 updateItem.setId(item.getId());
                 int not_win_count = 0;
                 List<String> voucherList = Arrays.asList(item.getVoucher().split(","));
@@ -460,11 +474,15 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
                 //中奖了
                 if (StringUtils.isNotBlank(win_voucher_str)) {
                     updateItem.setGrouponStatus(GroupOrderStatusEnum.SUCCESS.getCode());
-                    updateItem.setGrouponResult(GroupOrderStatusEnum.SUCCESS.getDesc());
+                    LambdaQueryWrapper<OrderDetail> detailLamb = new LambdaQueryWrapper<>();
+                    detailLamb.eq(OrderDetail::getOrderId,item.getOrderId()).last("limit 1");
+                    OrderDetail orderDetail = orderDetailService.getOne(detailLamb);
+                    if(orderDetail != null){
+                        updateItem.setGrouponResult(orderDetail.getGoodsName()+" *"+orderDetail.getGoodsCount());
+                    }
                     updateItem.setWinVoucher(win_voucher_str.toString().substring(0,win_voucher_str.toString().length() -1));
                 } else {
                     updateItem.setGrouponStatus(GroupOrderStatusEnum.FAILED.getCode());
-                    updateItem.setGrouponResult(GroupOrderStatusEnum.FAILED.getDesc());
                     updateItem.setBackPrize(backPrize);
                     item.setBackPrize(backPrize);
                 }
@@ -472,8 +490,21 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
 
                 // 拆单
                 if (not_win_count > 0 && not_win_count < voucherList.size()) {
-                    splitOrder(item.getOrderId(), not_win_count);
+                    BigDecimal refundPrice = splitOrder(item.getOrderId(), not_win_count);
                     splitOrderIds.add(item.getOrderId());
+                    if(refundPrice != null){
+                        updateItem.setGrouponResult("返回本金+奖励金" + backPrize.add(refundPrice) + "元");
+                    }else{
+                        updateItem.setGrouponResult("返回奖励金" + backPrize+ "元");
+                    }
+                }else if(backPrize.compareTo(new BigDecimal(0)) > 0){
+                    OrderMaster orderMaster = orderMasterService.getById(item.getOrderId());
+                    if(orderMaster == null){
+                        updateItem.setGrouponResult("查找不到原订单");
+                    }else{
+                        updateItem.setGrouponResult("返回本金+奖励金" + backPrize.add(orderMaster.getPracticalPay()) + "元");
+                    }
+
                 }
             }
             //修改group-order-master 状态
@@ -483,13 +514,13 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
             taskService.addTask(new GroupNoticeUnpaidTask(joinGroupId,60,GroupOrderStatusEnum.SUCCESS.getCode(),0));
 
             // 根据返利字段进行返利  (退款)
-            allOrderMaster = allOrderMaster.stream()
+            updateOrderMasterList = updateOrderMasterList.stream()
                     .filter(item -> item.getBackPrize() != null && item.getBackPrize().compareTo(new BigDecimal(0)) > 0)
                     .collect(Collectors.toList());
             //调用返利接口 (发放余额)
-            boolean balanceRebateResult =  HttpClientUtil.deductUserBalanceBatch(allOrderMaster);
+            boolean balanceRebateResult =  HttpClientUtil.deductUserBalanceBatch(true,updateOrderMasterList);
             //调用退款 接口 (微信退款和余额退款)
-            List<OrderRefund> refundList = allOrderMaster.stream()
+            List<OrderRefund> refundList = updateOrderMasterList.stream()
                     .filter(item -> !splitOrderIds.contains(item.getOrderId()))
                     .map(i -> {
                         OrderRefund orderRefund = new OrderRefund();
@@ -512,6 +543,12 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
      * @return
      */
     public void doRebateBalance(BigDecimal bounty, Integer notWinSize, Integer grouponOrderId) {
+        if(notWinSize - 1 == 0 ){
+            List<String> redisNotWinList1 = new ArrayList<>();
+            redisNotWinList1.add(bounty.toString());
+            redisService.lpushList(SystemConfig.NOT_WIN_LIST_PREFIX + grouponOrderId, redisNotWinList1);
+            return ;
+        }
         //抽奖 (平分奖金)
         BigDecimal left = bounty.divide(new BigDecimal(2), 1);
         BigDecimal right = bounty.subtract(left);
@@ -541,12 +578,12 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
      * @param orderId
      * @param notWinCount
      */
-    public void splitOrder(Integer orderId, int notWinCount) {
+    public BigDecimal splitOrder(Integer orderId, int notWinCount) {
         LambdaQueryWrapper<OrderDetail> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(OrderDetail::getOrderId, orderId);
         OrderDetail orderDetail = orderDetailService.getOne(queryWrapper);
-        if (queryWrapper == null) {
-            return;
+        if (orderDetail == null) {
+            return null;
         }
         //失败
         OrderDetail notWinOrderDetail = new OrderDetail();
@@ -573,6 +610,7 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
         orderRefund.setTotalFee(Integer.parseInt(MoneyUtil.moneyYuan2FenStr(not_win_price)));
         orderRefund.setRefundFee(Integer.parseInt(MoneyUtil.moneyYuan2FenStr(not_win_price)));
         orderRefundService.save(orderRefund);
+        return not_win_price;
     }
 
     /**
@@ -606,7 +644,7 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
                 redisService.hset(SystemConfig.GROUP_INFO_PREFIX + joinGroupId, userId+"", 1+"");
             }else if(mode - 1 == 0){
                 String old = redisService.hget(SystemConfig.GROUP_INFO_PREFIX + joinGroupId,userId+"");
-                if(StringUtils.isBlank(old)){
+                if("null".equals(old) || StringUtils.isBlank(old)){
                        old = "0";
                 }
                 redisService.hset(SystemConfig.GROUP_INFO_PREFIX + joinGroupId, userId+"",  orderDetail.getGoodsCount() + Integer.valueOf(old)+"");
@@ -675,6 +713,7 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
             if(orderMaster != null && orderMaster.getPayWay() - 3 == 0){
                 //微信
                 grouponOrderMaster.setMemberId(orderMaster.getMemberId());
+                grouponOrderMaster.setOrderId(orderMaster.getId().intValue());
 
                 updateRefund.setOutRefundNo(CharUtil.getCode(orderMaster.getMemberId(),3));
                 updateRefund.setOutTradeNo(orderMaster.getSystemOrderNo());
@@ -689,7 +728,7 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
                 updateBatch.add(updateRefund);
             }
         }
-        boolean result = HttpClientUtil.deductUserBalanceBatch(grouponOrderMasterList);
+        boolean result = HttpClientUtil.deductUserBalanceBatch(false,grouponOrderMasterList);
         if(result){
             orderRefundService.updateBatchById(updateBatch);
         }

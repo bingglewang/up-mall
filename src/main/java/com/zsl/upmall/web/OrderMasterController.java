@@ -26,6 +26,7 @@ import com.zsl.upmall.util.DateUtil;
 import com.zsl.upmall.util.HttpClientUtil;
 import com.zsl.upmall.util.IpUtil;
 import com.zsl.upmall.util.MoneyUtil;
+import com.zsl.upmall.vo.BalanceRefundListVo;
 import com.zsl.upmall.vo.RefundNotifyVo;
 import com.zsl.upmall.vo.in.*;
 import com.zsl.upmall.vo.out.Logistics;
@@ -623,6 +624,38 @@ public class OrderMasterController {
         upOrderReceived.setRefundFinishTime(new Date());
         if (!baseService.updateById(upOrderReceived)) {
             throw new RuntimeException("更新数据已失效");
+        }
+        return result.success("处理成功!");
+    }
+
+
+    /**
+     * 余额支付回调
+     * @return 操作结果
+     */
+    @PostMapping("balance-notify")
+    public Object balanceNotify(@RequestBody BalanceRefundListVo balanceRefundListVo) {
+        logger.info("微信申请退款回调接口回调结果===>" + balanceRefundListVo);
+        List<GrouponOrderMaster> allOrderMaster = balanceRefundListVo.getAllOrderMaster();
+        for(GrouponOrderMaster grouponOrderMaster : allOrderMaster){
+            OrderMaster order = baseService.getById(grouponOrderMaster.getOrderId());
+            if (order == null) {
+                return result.error("订单不存在 sn=" + order.getSystemOrderNo());
+            }
+
+            // 检查这个订单是否已经处理过
+            if (order.getOrderStatus() - SystemConfig.ORDER_STATUS_REFUNDED != 0) {
+                return result.success("订单已经处理成功!");
+            }
+
+            // 设置订单 设置退还完成 ------>  支付成功，设置成 待发货
+            OrderMaster upOrderReceived = new OrderMaster();
+            upOrderReceived.setId(order.getId());
+            upOrderReceived.setOrderStatus(SystemConfig.ORDER_STATUS_REFUNDED);
+            upOrderReceived.setRefundFinishTime(new Date());
+            if (!baseService.updateById(upOrderReceived)) {
+                throw new RuntimeException("更新数据已失效");
+            }
         }
         return result.success("处理成功!");
     }

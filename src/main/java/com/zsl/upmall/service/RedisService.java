@@ -52,6 +52,7 @@ public interface RedisService {
 
     void zUpdateScore(String key,String value,double score);
 
+    void removeZset(String key,String value);
     /**
      * 实现命令：HDEL key field [field ...]，删除哈希表 key 中的一个或多个指定域，不存在的域将被忽略。
      *

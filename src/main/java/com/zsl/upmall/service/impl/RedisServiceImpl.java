@@ -43,6 +43,8 @@ public class RedisServiceImpl implements RedisService {
         stringRedisTemplate.delete(key);
     }
 
+
+
     @Override
     public Long increment(String key, long delta) {
         return stringRedisTemplate.opsForValue().increment(key,delta);
@@ -78,6 +80,12 @@ public class RedisServiceImpl implements RedisService {
     public void zSet(String key,String value,double score){
         stringRedisTemplate.opsForZSet().add(key,value,score);
     }
+
+    @Override
+    public void removeZset(String key,String value){
+        stringRedisTemplate.opsForZSet().remove(key,value);
+    }
+
 
     @Override
     public void zUpdateScore(String key,String value,double score){

@@ -283,7 +283,7 @@ public class HttpClientUtil {
      * @param allOrderMaster 发放列表
      * @return
      */
-    public static boolean deductUserBalanceBatch(List<GrouponOrderMaster> allOrderMaster){
+    public static boolean deductUserBalanceBatch(Boolean onlyDeduct, List<GrouponOrderMaster> allOrderMaster){
         logger.info("余额奖励金发放列表：{{{{{"+allOrderMaster+"}}}}}}}");
         JSONObject params = new JSONObject();
         List<BalacneRebateVo> balacneRebateVos = allOrderMaster.stream()
@@ -298,6 +298,10 @@ public class HttpClientUtil {
                 AddressResultVo addressResultVo = JSON.parseObject(result,AddressResultVo.class);
                 if(addressResultVo != null && "100200".equals(addressResultVo.getCode())){
                     isSuccess = true;
+                    // 余额支付回调
+                    if(!onlyDeduct){
+                        doBalancePayNotify(allOrderMaster);
+                    }
                 }
             }
         }catch (Exception e){
@@ -305,6 +309,8 @@ public class HttpClientUtil {
         }
         return isSuccess;
     }
+
+
 
 
     /**
@@ -387,6 +393,19 @@ public class HttpClientUtil {
 
     /**
      * 余额支付回调
+     */
+    public static void doBalancePayNotify(List<GrouponOrderMaster> allOrderMaster){
+        //回调 改变订单状态
+        JSONObject paramsNotify = new JSONObject();
+        paramsNotify.put("balanceList",allOrderMaster);
+        String notifyResult = doPostJson(SystemConfig.BALANCE_NOTIFY_URL,paramsNotify.toJSONString(),null);
+        logger.info("余额支付回调结果：allOrderMaster【【【"+allOrderMaster+"】】】"+"=====》》{{{"+notifyResult+"}}}");
+    }
+
+
+
+    /**
+     * 微信支付回调
      * @param token
      * @param orderSn
      */

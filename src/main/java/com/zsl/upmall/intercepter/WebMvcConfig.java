@@ -14,6 +14,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
         registry.addInterceptor(centerAdminLoginInterceptor()).addPathPatterns("/**")
                 .excludePathPatterns("/order/pay-notify/**")
                 .excludePathPatterns("/groupon/test/**")
+                .excludePathPatterns("order/balance-notify/**")
                 .excludePathPatterns("/test/send/**")
                 .excludePathPatterns("/order/push/**");
     }

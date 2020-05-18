@@ -19,7 +19,7 @@ public class GrouponOrderUnpaidTask extends Task{
     private GrouponActivities activityDetail;
 
     public GrouponOrderUnpaidTask(long joinGroupId,GrouponActivities activityDetail){
-        super("GrouponOrderUnpaidTask-" + joinGroupId, activityDetail.getExpireHour() * 60 * 60 * 1000);
+        super("GrouponOrderUnpaidTask-" + joinGroupId, activityDetail.getExpireHour() * 60 * 1000);
         this.joinGroupId = joinGroupId;
         this.activityDetail = activityDetail;
     }
