@@ -40,6 +40,7 @@
 		<id column="totalAmount" property="totalAmount" />
 		<id column="comboLevel" property="comboLevel" />
 		<id column="isGroup" property="isGroup" />
+		<id column="grouponActivityId" property="grouponActivityId" />
 		<collection column="orderId" property="orderListProductList" select="getOrderListProductList"></collection>
 		<collection property="totalProductCounts" column="orderId" select="getTotalProductCount"></collection>
 	</resultMap>
@@ -53,7 +54,8 @@
 			orderM.practical_pay totalAmount,
 		    orderM.order_status orderStatus,
 		    orderM.combo_level comboLevel,
-		    if(gom.id,gom.groupon_status,-1) isGroup
+		    if(gom.id,gom.groupon_status,-1) isGroup,
+		    orderM.groupon_activity_id grouponActivityId
 		FROM
 			order_master orderM
 		LEFT JOIN groupon_order_master gom on gom.order_id = orderM.id
@@ -74,6 +76,7 @@
 		<id column="productImg" property="productImg" />
 		<id column="productPrice" property="productPrice" />
 		<id column="productSpec" property="productSpec" />
+		<id column="clearInfo" property="clearInfo" />
 	</resultMap>
 
 	<select id="getOrderListProductList" resultMap="OrderListProductListMap">
@@ -82,7 +85,8 @@
 		    detailO.goods_name productName,
 			detailO.goods_img productImg,
 			detailO.goods_price productPrice,
-			detailO.goods_spec productSpec
+			detailO.goods_spec productSpec,
+			detailO.clearing_info clearInfo
 		FROM
 			order_detail detailO
 		where detailO.order_id = #{orderId}

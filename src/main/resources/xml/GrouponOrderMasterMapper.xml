@@ -24,7 +24,7 @@
 		<result column="groupAvatar" property="groupAvatar" jdbcType="VARCHAR" />
 		<result column="grouponName" property="grouponName" jdbcType="VARCHAR" />
 		<result column="nickName" property="nickName" jdbcType="VARCHAR"/>
-		<result column="payTime" property="payTime" jdbcType="DATE"/>
+		<result column="payTime" property="payTime"/>
 		<result column="goodsCount" property="goodsCount" jdbcType="INTEGER"/>
 	</resultMap>
 
@@ -78,6 +78,34 @@
 		WHERE
 			gom.groupon_order_id = #{grouponOrderId}
 		and gom.groupon_status = #{grouponStatus}
+	</select>
+
+	<resultMap id="SendMsgResultMap" type="com.zsl.upmall.vo.SendMsgVo">
+		<result column="avatar" property="avatar" jdbcType="VARCHAR" />
+		<result column="nickName" property="nickName" jdbcType="VARCHAR"/>
+		<result column="msgType" property="msgType" jdbcType="VARCHAR"/>
+	</resultMap>
+
+
+	<select id="sendMsg" resultMap="SendMsgResultMap">
+			SELECT
+				u.avatar avatar,
+				u.nick_name nickName,
+				CASE o.groupon_order_id
+			WHEN 0 THEN
+				'发起拼团'
+			WHEN null THEN
+				''
+			WHEN -1 THEN
+				''
+			ELSE
+				'参与拼团'
+			END msgType
+			FROM
+				order_master o
+			LEFT JOIN user_member u ON u.id = o.member_id
+			WHERE
+				o.id = #{orderId};
 	</select>
 
 </mapper>

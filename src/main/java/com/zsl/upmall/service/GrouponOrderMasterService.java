@@ -11,6 +11,7 @@ import com.zsl.upmall.entity.GrouponActivities;
 import com.zsl.upmall.entity.GrouponOrderMaster;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.zsl.upmall.vo.MiniNoticeVo;
+import com.zsl.upmall.vo.SendMsgVo;
 import com.zsl.upmall.vo.out.GrouponListVo;
 
 import java.util.List;
@@ -69,4 +70,6 @@ public interface GrouponOrderMasterService extends IService<GrouponOrderMaster> 
     void doGrouponService(Long orderId,Integer userId);
 
     List<MiniNoticeVo> getGroupNoticeList(Long grouponOrderId,Integer grouponStatus);
+
+    SendMsgVo sendMsg(Long orderId);
 }

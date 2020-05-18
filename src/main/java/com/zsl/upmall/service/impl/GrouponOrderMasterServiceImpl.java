@@ -11,9 +11,12 @@ import cn.binarywang.wx.miniapp.api.impl.WxMaServiceImpl;
 import cn.binarywang.wx.miniapp.bean.WxMaSubscribeData;
 import cn.binarywang.wx.miniapp.bean.WxMaSubscribeMessage;
 import cn.binarywang.wx.miniapp.config.impl.WxMaDefaultConfigImpl;
+import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.google.gson.JsonObject;
 import com.zsl.upmall.config.SystemConfig;
+import com.zsl.upmall.config.WebSocket;
 import com.zsl.upmall.config.WxProperties;
 import com.zsl.upmall.context.RequestContext;
 import com.zsl.upmall.context.RequestContextMgr;
@@ -27,6 +30,7 @@ import com.zsl.upmall.util.*;
 import com.zsl.upmall.vo.BalacneRebateVo;
 import com.zsl.upmall.vo.GroupOrderStatusEnum;
 import com.zsl.upmall.vo.MiniNoticeVo;
+import com.zsl.upmall.vo.SendMsgVo;
 import com.zsl.upmall.vo.out.GrouponListVo;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -317,6 +321,7 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
                 redisService.lpushList("CP_" + SystemConfig.GROUP_PREFIX + joinGroupId, vouchers);
                 redisService.expire("CP_" + SystemConfig.GROUP_PREFIX + joinGroupId, activityDetail.getExpireHour() * 60 * 60);
             }
+
         }else{
             // 存放拼团，活动redis 信息 （团队信息HASH: GROUPON_团队ID  用户ID  参与份额）
             doRedisGroupInfo(false,orderId,activityDetail.getMode(),grouponActivityId,activityDetail.getGroupCount(),joinGroupId,userId);
@@ -330,6 +335,10 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
         // 插入groupon-order-master
         insertGroupOrderMaster(grouponOrderMaster, joinGroupId, activityDetail.getMode(), userId, orderId);
 
+        //webosocket通知
+        SendMsgVo sendMsgVo =  sendMsg(orderId);
+        WebSocket.sendMessageAll(JSON.toJSONString(sendMsgVo));
+
         //如果符合条件则 结算
         if (redisService.lsize(SystemConfig.GROUP_PREFIX + joinGroupId) - 0 == 0) {
             settlementGroup(joinGroupId,activityDetail);
@@ -339,6 +348,11 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
     @Override
     public List<MiniNoticeVo> getGroupNoticeList(Long grouponOrderId, Integer grouponStatus) {
         return this.baseMapper.getGroupNoticeList(grouponOrderId,grouponStatus);
+    }
+
+    @Override
+    public SendMsgVo sendMsg(Long orderId) {
+        return this.baseMapper.sendMsg(orderId);
     }
 
 
@@ -447,6 +461,7 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
                 if (StringUtils.isNotBlank(win_voucher_str)) {
                     updateItem.setGrouponStatus(GroupOrderStatusEnum.SUCCESS.getCode());
                     updateItem.setGrouponResult(GroupOrderStatusEnum.SUCCESS.getDesc());
+                    updateItem.setWinVoucher(win_voucher_str.toString().substring(0,win_voucher_str.toString().length() -1));
                 } else {
                     updateItem.setGrouponStatus(GroupOrderStatusEnum.FAILED.getCode());
                     updateItem.setGrouponResult(GroupOrderStatusEnum.FAILED.getDesc());
@@ -549,7 +564,7 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
         notWinOrderDetail.setGoodsAmount(not_win_price);
         notWinOrderDetail.setGoodsCount(notWinCount);
         notWinOrderDetail.setActualCount(notWinCount);
-        winOrderDetail.setClearingInfo("未中奖,拼团失败");
+        notWinOrderDetail.setClearingInfo("未中奖商品");
         orderDetailService.save(notWinOrderDetail);
         OrderRefund orderRefund = new OrderRefund();
         orderRefund.setCreateTime(new Date());
@@ -636,7 +651,7 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
                         String voucherItem = redisService.lpop(SystemConfig.GROUP_PREFIX + groupOrderId);
                         c_vouchers.append(voucherItem + ",");
                     });
-            grouponOrderMaster.setVoucher(c_vouchers.toString());
+            grouponOrderMaster.setVoucher(c_vouchers.toString().substring(0,c_vouchers.toString().length() - 1));
             grouponOrderMasterService.save(grouponOrderMaster);
         }
     }
@@ -668,13 +683,16 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
                     updateRefund.setTotalFee(Integer.valueOf(MoneyUtil.moneyYuan2FenStr(orderMaster.getPracticalPay())));
                     updateRefund.setRefundFee(Integer.valueOf(MoneyUtil.moneyYuan2FenStr(orderMaster.getPracticalPay())));
                 }
+                updateRefund.setRefundTime(new Date());
                 grouponOrderMaster.setBackPrize(MoneyUtil.moneyFen2Yuan(updateRefund.getTotalFee().toString()));
                 grouponOrderMasterList.add(grouponOrderMaster);
                 updateBatch.add(updateRefund);
             }
         }
-        orderRefundService.updateBatchById(updateBatch);
-        HttpClientUtil.deductUserBalanceBatch(grouponOrderMasterList);
+        boolean result = HttpClientUtil.deductUserBalanceBatch(grouponOrderMasterList);
+        if(result){
+            orderRefundService.updateBatchById(updateBatch);
+        }
     }
 
     /**

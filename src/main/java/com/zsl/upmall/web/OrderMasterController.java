@@ -109,7 +109,7 @@ public class OrderMasterController {
         orderInfo.put("id", id);
         orderInfo.put("orderSn", orderMaster.getSystemOrderNo());
         orderInfo.put("traceNo", orderMaster.getTransactionOrderNo());
-        orderInfo.put("payWay", "在线支付");
+        orderInfo.put("payWay", orderMaster.getPayWay());
         orderInfo.put("comboLevel", orderMaster.getComboLevel());
         orderInfo.put("goodsAmount", orderMaster.getTotalGoodsAmout());
         orderInfo.put("actualPrice", orderMaster.getPracticalPay());

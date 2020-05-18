@@ -23,4 +23,5 @@ public class OrderListVo {
     private Integer totalProductCounts;
     /** 是否拼团 */
     private String isGroup;
+    private Integer grouponActivityId;
 }

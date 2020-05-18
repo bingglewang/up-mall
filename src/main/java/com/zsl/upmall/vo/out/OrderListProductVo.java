@@ -16,4 +16,5 @@ public class OrderListProductVo {
     private BigDecimal productPrice;
     /** 商品规格 */
     private String productSpec;
+    private String clearInfo;
 }
