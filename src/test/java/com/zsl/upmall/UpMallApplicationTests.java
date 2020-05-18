@@ -59,41 +59,43 @@ public class UpMallApplicationTests {
        /* SendMsgVo sendMsgVo =  grouponOrderMasterService.sendMsg(new Long(781));
         System.out.println();*/
         /*doRebateBalance(new BigDecimal(5),3,163);*/
-        List<String> not_win_list = redisService.lgetall("CP_" + SystemConfig.GROUP_PREFIX + 167);
-        System.out.println(not_win_list.size());
+        refundToBalance();
     }
 
-    public void doRebateBalance(BigDecimal bounty, Integer notWinSize, Integer grouponOrderId) {
-        if(notWinSize - 0 == 0){
-            return ;
+    public void refundToBalance(){
+        LambdaQueryWrapper<OrderRefund> orderRefundQuery = new LambdaQueryWrapper<>();
+        orderRefundQuery.isNull(OrderRefund::getRefundTime);
+        List<OrderRefund> refundList = orderRefundService.list(orderRefundQuery);
+        List<OrderRefund> updateBatch = new ArrayList<>();
+        List<GrouponOrderMaster> grouponOrderMasterList = new ArrayList<>();
+        for(OrderRefund item : refundList){
+            OrderRefund updateRefund = new OrderRefund();
+            GrouponOrderMaster grouponOrderMaster = new GrouponOrderMaster();
+            updateRefund.setId(item.getId());
+            OrderMaster orderMaster = orderMasterService.getById(item.getOrderId());
+
+            if(orderMaster != null && orderMaster.getPayWay() - 3 == 0){
+                //微信
+                grouponOrderMaster.setMemberId(orderMaster.getMemberId());
+                grouponOrderMaster.setOrderId(orderMaster.getId().intValue());
+
+                updateRefund.setOutRefundNo(CharUtil.getCode(orderMaster.getMemberId(),3));
+                updateRefund.setOutTradeNo(orderMaster.getSystemOrderNo());
+                updateRefund.setTransactionId(orderMaster.getTransactionOrderNo());
+                if(item.getTotalFee() == null || item.getTotalFee() - 0 == 0){
+                    updateRefund.setTotalFee(Integer.valueOf(MoneyUtil.moneyYuan2FenStr(orderMaster.getPracticalPay())));
+                    updateRefund.setRefundFee(Integer.valueOf(MoneyUtil.moneyYuan2FenStr(orderMaster.getPracticalPay())));
+                }
+                updateRefund.setRefundTime(new Date());
+                grouponOrderMaster.setBackPrize(MoneyUtil.moneyFen2Yuan(updateRefund.getTotalFee().toString()));
+                grouponOrderMasterList.add(grouponOrderMaster);
+                updateBatch.add(updateRefund);
+            }
         }
-        if(notWinSize - 1 == 0 ){
-            List<String> redisNotWinList1 = new ArrayList<>();
-            redisNotWinList1.add(bounty.toString());
-            redisService.lpushList(SystemConfig.NOT_WIN_LIST_PREFIX + grouponOrderId, redisNotWinList1);
-            return ;
+        boolean result = HttpClientUtil.deductUserBalanceBatch(false,grouponOrderMasterList);
+        if(result){
+            orderRefundService.updateBatchById(updateBatch);
         }
-        //抽奖 (平分奖金)
-        BigDecimal left = bounty.divide(new BigDecimal(2), 1);
-        BigDecimal right = bounty.subtract(left);
-        BigDecimal leftPointCount = new BigDecimal(notWinSize).divide(new BigDecimal(2), 1);
-        BigDecimal rightPointCount = new BigDecimal(notWinSize).subtract(leftPointCount);
-        BigDecimal leftAvg = left.divide(leftPointCount).setScale(2, BigDecimal.ROUND_DOWN);
-        right = right.add(left.subtract(leftAvg.multiply(leftPointCount)));
-        // 发送奖金到余额 (平均)
-        List<BigDecimal> reusltLeft = Stream.iterate(1, k -> ++k)
-                .limit(leftPointCount.intValue())
-                .map(i -> leftAvg)
-                .collect(Collectors.toList());
-        // 随机发放
-        List<Double> result = RedPacket.hb(right.doubleValue(), rightPointCount.intValue(), 0.01);
-        List<BigDecimal> reusltRight = result.stream().map(item -> new BigDecimal(item).setScale(2, BigDecimal.ROUND_HALF_UP)).collect(Collectors.toList());
-        List<BigDecimal> resultAll = new ArrayList<>();
-        resultAll.addAll(reusltLeft);
-        resultAll.addAll(reusltRight);
-        List<String> redisNotWinList = resultAll.stream()
-                .map(item -> item.toString()).collect(Collectors.toList());
-        redisService.lpushList(SystemConfig.NOT_WIN_LIST_PREFIX + grouponOrderId, redisNotWinList);
     }
 
 }

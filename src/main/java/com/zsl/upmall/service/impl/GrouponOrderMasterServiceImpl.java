@@ -466,7 +466,8 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
                         //没中奖的
                         not_win_count++;
                         String backPrizeItemStr = redisService.lpop(SystemConfig.NOT_WIN_LIST_PREFIX + joinGroupId);
-                        backPrize.add(new BigDecimal(backPrizeItemStr));
+                        logger.info("没中奖余额返利："+backPrizeItemStr);
+                        backPrize = backPrize.add(new BigDecimal(backPrizeItemStr));
                     } else {
                         win_voucher_str.append(vou + ",");
                     }
@@ -543,6 +544,7 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
      * @return
      */
     public void doRebateBalance(BigDecimal bounty, Integer notWinSize, Integer grouponOrderId) {
+        logger.info("余额返利 notWinSize:"+notWinSize+",bounty:"+bounty+",grouponOrderId"+grouponOrderId);
         if(notWinSize - 1 == 0 ){
             List<String> redisNotWinList1 = new ArrayList<>();
             redisNotWinList1.add(bounty.toString());
@@ -579,6 +581,7 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
      * @param notWinCount
      */
     public BigDecimal splitOrder(Integer orderId, int notWinCount) {
+        logger.info("没中奖数量："+notWinCount);
         LambdaQueryWrapper<OrderDetail> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(OrderDetail::getOrderId, orderId);
         OrderDetail orderDetail = orderDetailService.getOne(queryWrapper);
@@ -589,6 +592,7 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
         OrderDetail notWinOrderDetail = new OrderDetail();
         BeanUtils.copyProperties(orderDetail, notWinOrderDetail);
         BigDecimal not_win_price = orderDetail.getGoodsPrice().multiply(new BigDecimal(notWinCount));
+        logger.info("没中奖数量原始："+not_win_price);
         OrderDetail winOrderDetail = new OrderDetail();
         winOrderDetail.setId(orderDetail.getId());
         winOrderDetail.setActualCount(orderDetail.getActualCount() - notWinCount);
@@ -609,6 +613,7 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
         orderRefund.setRefundDesc("订单部分凭证未中奖的退款");
         orderRefund.setTotalFee(Integer.parseInt(MoneyUtil.moneyYuan2FenStr(not_win_price)));
         orderRefund.setRefundFee(Integer.parseInt(MoneyUtil.moneyYuan2FenStr(not_win_price)));
+        logger.info("没中奖数量腿狂："+orderRefund.getTotalFee());
         orderRefundService.save(orderRefund);
         return not_win_price;
     }
@@ -718,7 +723,7 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
                 updateRefund.setOutRefundNo(CharUtil.getCode(orderMaster.getMemberId(),3));
                 updateRefund.setOutTradeNo(orderMaster.getSystemOrderNo());
                 updateRefund.setTransactionId(orderMaster.getTransactionOrderNo());
-                if(updateRefund.getTotalFee() == null || updateRefund.getTotalFee() - 0 == 0){
+                if(item.getTotalFee() == null || item.getTotalFee() - 0 == 0){
                     updateRefund.setTotalFee(Integer.valueOf(MoneyUtil.moneyYuan2FenStr(orderMaster.getPracticalPay())));
                     updateRefund.setRefundFee(Integer.valueOf(MoneyUtil.moneyYuan2FenStr(orderMaster.getPracticalPay())));
                 }
