@@ -6,6 +6,8 @@ import com.zsl.upmall.config.SystemConfig;
 import com.zsl.upmall.entity.GrouponOrderMaster;
 import com.zsl.upmall.entity.OrderRefund;
 import com.zsl.upmall.vo.BalacneRebateVo;
+import com.zsl.upmall.vo.BalanceRefundListVo;
+import com.zsl.upmall.vo.BalanceRefundVo;
 import com.zsl.upmall.vo.in.*;
 import com.zsl.upmall.vo.out.UnifiedOrderVo;
 import com.zsl.upmall.web.OrderMasterController;
@@ -395,11 +397,16 @@ public class HttpClientUtil {
      * 余额支付回调
      */
     public static void doBalancePayNotify(List<GrouponOrderMaster> allOrderMaster){
+        List<BalanceRefundVo> params = allOrderMaster.stream().map(item -> {
+            BalanceRefundVo balanceRefundVo = new BalanceRefundVo();
+            balanceRefundVo.setOrderId(item.getOrderId());
+            return balanceRefundVo;
+        }).collect(Collectors.toList());
         //回调 改变订单状态
         JSONObject paramsNotify = new JSONObject();
-        paramsNotify.put("balanceBatch",allOrderMaster);
+        paramsNotify.put("balanceBatch",params);
         String notifyResult = doPostJson(SystemConfig.BALANCE_NOTIFY_URL,paramsNotify.toJSONString(),null);
-        logger.info("余额支付回调结果：allOrderMaster【【【"+allOrderMaster+"】】】"+"=====》》{{{"+notifyResult+"}}}");
+        logger.info("余额支付回调结果：allOrderMaster【【【"+params+"】】】"+"=====》》{{{"+notifyResult+"}}}");
     }
 
 

@@ -27,6 +27,7 @@ import com.zsl.upmall.util.HttpClientUtil;
 import com.zsl.upmall.util.IpUtil;
 import com.zsl.upmall.util.MoneyUtil;
 import com.zsl.upmall.vo.BalanceRefundListVo;
+import com.zsl.upmall.vo.BalanceRefundVo;
 import com.zsl.upmall.vo.RefundNotifyVo;
 import com.zsl.upmall.vo.in.*;
 import com.zsl.upmall.vo.out.Logistics;
@@ -636,8 +637,8 @@ public class OrderMasterController {
     @PostMapping("balance-notify")
     public Object balanceNotify(@RequestBody BalanceRefundListVo list) {
         logger.info("微信申请退款回调接口回调结果===余额支付回调>" + list);
-        List<GrouponOrderMaster> allOrderMaster = list.getBalanceBatch();
-        for(GrouponOrderMaster grouponOrderMaster : allOrderMaster){
+        List<BalanceRefundVo> allOrderMaster = list.getBalanceBatch();
+        for(BalanceRefundVo grouponOrderMaster : allOrderMaster){
             OrderMaster order = baseService.getById(grouponOrderMaster.getOrderId());
             if (order == null) {
                 return result.error("订单不存在 sn=" + order.getSystemOrderNo());

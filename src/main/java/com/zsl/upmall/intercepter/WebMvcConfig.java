@@ -12,11 +12,11 @@ public class WebMvcConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         // 添加拦截器
         registry.addInterceptor(centerAdminLoginInterceptor()).addPathPatterns("/**")
+                .excludePathPatterns("/order/balance-notify/**")
                 .excludePathPatterns("/order/pay-notify/**")
                 .excludePathPatterns("/groupon/test/**")
-                .excludePathPatterns("/order/balance-notify/**")
-                .excludePathPatterns("/test/send/**")
-                .excludePathPatterns("/order/push/**");
+                .excludePathPatterns("/order/refund-notify/**")
+                .excludePathPatterns("/test/send/**");
     }
 
     @Bean

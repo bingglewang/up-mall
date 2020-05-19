@@ -1,6 +1,5 @@
 package com.zsl.upmall.vo;
 
-import com.zsl.upmall.entity.GrouponOrderMaster;
 import lombok.Data;
 
 import java.util.List;
@@ -14,5 +13,5 @@ import java.util.List;
  **/
 @Data
 public class BalanceRefundListVo {
-    private List<GrouponOrderMaster> balanceBatch;
+    private List<BalanceRefundVo> balanceBatch;
 }

@@ -8,12 +8,12 @@ import com.zsl.upmall.service.*;
 import com.zsl.upmall.util.*;
 import com.zsl.upmall.vo.SendMsgVo;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+//import org.junit.Test;
+//import org.junit.runner.RunWith;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
+//import org.springframework.boot.test.context.SpringBootTest;
+//import org.springframework.test.context.junit4.SpringRunner;
 
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
@@ -28,8 +28,8 @@ import java.util.stream.Stream;
 
 import static org.bouncycastle.asn1.x500.style.RFC4519Style.l;
 
-@RunWith(SpringRunner.class)
-@SpringBootTest
+//@RunWith(SpringRunner.class)
+//@SpringBootTest
 public class UpMallApplicationTests {
 
     @Autowired
@@ -50,7 +50,7 @@ public class UpMallApplicationTests {
     @Autowired
     private GrouponActivitiesService grouponActivitiesService;
 
-    @Test
+   //@Test
     public void contextLoads() {
         //grouponOrderMasterService.doGrouponService(new Long(890),100);
         /*GrouponActivities grouponActivities = grouponActivitiesService.getById(9);
