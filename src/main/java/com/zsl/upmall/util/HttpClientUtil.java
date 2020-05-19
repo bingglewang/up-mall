@@ -370,6 +370,7 @@ public class HttpClientUtil {
      * @return
      */
     public static boolean doRefund(OrderRefund orderRefund){
+        logger.info("微信退款定orderRefund【【【"+orderRefund+"】】】结果：");
         JSONObject refundParam = new JSONObject();
         refundParam.put("source",SystemConfig.SYSTEM_UNIQUE_CODE);
         refundParam.put("transaction_id",orderRefund.getTransactionId());

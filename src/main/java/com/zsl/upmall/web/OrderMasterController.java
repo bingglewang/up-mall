@@ -602,7 +602,7 @@ public class OrderMasterController {
      */
     @PostMapping("refund-notify")
     public Object refundNotify(@RequestBody RefundNotifyVo refundNotifyVo) {
-        logger.info("微信申请退款回调接口回调结果===>" + refundNotifyVo);
+        logger.info("微信申请退款回调接口回调结果===refundNotifyVo>" + refundNotifyVo);
 
         String orderSn = refundNotifyVo.getOut_trade_no();
 
@@ -614,7 +614,7 @@ public class OrderMasterController {
         }
 
         // 检查这个订单是否已经处理过
-        if (order.getOrderStatus() - SystemConfig.ORDER_STATUS_REFUNDED != 0) {
+        if (order.getOrderStatus() - SystemConfig.ORDER_STATUS_REFUNDED == 0) {
             return result.success("订单已经处理成功!");
         }
 
@@ -647,6 +647,15 @@ public class OrderMasterController {
             // 检查这个订单是否已经处理过
             if (order.getOrderStatus() - SystemConfig.ORDER_STATUS_REFUNDED == 0) {
                 return result.success("订单已经处理成功!");
+            }
+
+            //判断是否拆单
+            LambdaQueryWrapper<OrderDetail> orderDetailLambdaQueryWrapper = new LambdaQueryWrapper<>();
+            orderDetailLambdaQueryWrapper.eq(OrderDetail::getOrderId,order.getId());
+            List<OrderDetail> orderDetails = orderDetailService.list(orderDetailLambdaQueryWrapper);
+            if(orderDetails.size() - 1 > 0 && StringUtils.isNotBlank(orderDetails.get(0).getClearingInfo())){
+                logger.info("订单号：【【【"+order.getSystemOrderNo()+"】】】订单拆单多份不修改状态");
+                continue;
             }
 
             // 设置订单 设置退还完成 ------>  支付成功，设置成 待发货

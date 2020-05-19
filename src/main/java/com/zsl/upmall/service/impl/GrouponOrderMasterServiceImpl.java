@@ -731,6 +731,8 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
             updateRefund.setId(item.getId());
             OrderMaster orderMaster = orderMasterService.getById(item.getOrderId());
 
+            if(item.getTotalFee() == null || item.getTotalFee() - 0 == 0){}
+
             if(orderMaster != null && orderMaster.getPayWay() - 3 == 0){
                 //微信
                 grouponOrderMaster.setMemberId(orderMaster.getMemberId());
@@ -750,6 +752,19 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
 
                 grouponOrderMasterList.add(grouponOrderMaster);
                 updateBatch.add(updateRefund);
+            }else if(orderMaster != null && orderMaster.getPayWay() - 2 == 0){
+                if(item.getTotalFee() == null || item.getTotalFee() - 0 == 0){
+                    //设置成退款中 （微信）
+                    // 将订单设置成 退款中
+                    OrderMaster updateRefunding = new OrderMaster();
+                    updateRefunding.setId(orderMaster.getId());
+                    updateRefunding.setRefundTime(new Date());
+                    updateRefunding.setOrderStatus(SystemConfig.ORDER_STATUS_REFUNDINGD);
+                    boolean isSuccess = orderMasterService.updateById(updateRefunding);
+                    logger.info("微信退款订单：【【【【"+orderMaster.getSystemOrderNo()+"】】】，修改结果：[[[["+isSuccess+"]]]]");
+                }else{
+                    logger.info("微信退款订单拆单：【【【【"+orderMaster.getSystemOrderNo());
+                }
             }
         }
         boolean result = HttpClientUtil.deductUserBalanceBatch(false,grouponOrderMasterList,3);

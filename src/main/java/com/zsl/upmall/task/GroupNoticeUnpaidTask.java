@@ -40,19 +40,19 @@ public class GroupNoticeUnpaidTask extends Task {
         if(this.type - 0 == 0){
             List<MiniNoticeVo> miniNoticeVos = grouponOrderMasterService.getGroupNoticeList(this.joinGroupId,GroupOrderStatusEnum.SUCCESS.getCode());
             for(MiniNoticeVo miniNoticeVo : miniNoticeVos){
-                grouponOrderMasterService.push(miniNoticeVo.getOpenId(),"index",miniNoticeVo.getGoodsName()+miniNoticeVo.getGoodsSpc(),miniNoticeVo.getOrderSn(),miniNoticeVo.getTotalFee()+"");
+                grouponOrderMasterService.push(miniNoticeVo.getOpenId(),"pages/orderDetails/orderDetails?id="+miniNoticeVo.getOrderId(),miniNoticeVo.getGoodsName()+miniNoticeVo.getGoodsSpc(),miniNoticeVo.getOrderSn(),miniNoticeVo.getTotalFee()+"");
             }
         }else if(this.type - 1 == 0){
             //场景说明拼团失败通知
             List<MiniNoticeVo> miniNoticeVos = grouponOrderMasterService.getGroupNoticeList(this.joinGroupId,GroupOrderStatusEnum.FAILED.getCode());
             for(MiniNoticeVo miniNoticeVo : miniNoticeVos){
-                grouponOrderMasterService.push1(miniNoticeVo.getOpenId(),"index",miniNoticeVo.getGoodsName()+miniNoticeVo.getGoodsSpc(),miniNoticeVo.getGoodsPrice()+"",miniNoticeVo.getTotalFee()+"","拼团失败");
+                grouponOrderMasterService.push1(miniNoticeVo.getOpenId(),"pages/orderDetails/orderDetails?id="+miniNoticeVo.getOrderId(),miniNoticeVo.getGoodsName()+miniNoticeVo.getGoodsSpc(),miniNoticeVo.getGoodsPrice()+"",miniNoticeVo.getTotalFee()+"","拼团失败");
             }
         }else if(this.type - 2 == 0){
             //场景说明拼团成功通知
             List<MiniNoticeVo> miniNoticeVos = grouponOrderMasterService.getGroupNoticeList(this.joinGroupId,GroupOrderStatusEnum.SUCCESS.getCode());
             for(MiniNoticeVo miniNoticeVo : miniNoticeVos){
-                grouponOrderMasterService.push2(miniNoticeVo.getOpenId(),"index",miniNoticeVo.getGoodsName()+miniNoticeVo.getGoodsSpc(),miniNoticeVo.getGoodsPrice()+"","拼团成功");
+                grouponOrderMasterService.push2(miniNoticeVo.getOpenId(),"pages/orderDetails/orderDetails?id="+miniNoticeVo.getOrderId(),miniNoticeVo.getGoodsName()+miniNoticeVo.getGoodsSpc(),miniNoticeVo.getGoodsPrice()+"","拼团成功");
             }
         }
         logger.info("拼团结果通知开始---【【【" + this.joinGroupId+"】】】");

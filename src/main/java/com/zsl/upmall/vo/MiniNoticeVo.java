@@ -15,6 +15,7 @@ import java.security.cert.CertificateExpiredException;
  **/
 @Data
 public class MiniNoticeVo {
+    private Integer orderId;
     private String orderSn;
     private BigDecimal totalFee;
     private Integer goodsCount;

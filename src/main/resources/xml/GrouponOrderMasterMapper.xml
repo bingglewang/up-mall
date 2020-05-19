@@ -51,6 +51,7 @@
 
 
 	<resultMap id="GroupNoticeListResultMap" type="com.zsl.upmall.vo.MiniNoticeVo">
+		<result column="orderId" property="orderId" jdbcType="INTEGER" />
 		<result column="orderSn" property="orderSn" jdbcType="VARCHAR" />
 		<result column="totalFee" property="totalFee" jdbcType="DECIMAL"/>
 		<result column="goodsCount" property="goodsCount" jdbcType="INTEGER"/>
@@ -63,6 +64,7 @@
 
 	<select id="getGroupNoticeList" resultMap="GroupNoticeListResultMap">
 		SELECT
+			om.id orderId,
 			om.system_order_no orderSn,
 			om.practical_pay totalFee,
 			od.goods_count goodsCount,
