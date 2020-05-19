@@ -8,12 +8,12 @@ import com.zsl.upmall.service.*;
 import com.zsl.upmall.util.*;
 import com.zsl.upmall.vo.SendMsgVo;
 import org.apache.commons.lang3.StringUtils;
-//import org.junit.Test;
-//import org.junit.runner.RunWith;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-//import org.springframework.boot.test.context.SpringBootTest;
-//import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
 
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
@@ -28,8 +28,8 @@ import java.util.stream.Stream;
 
 import static org.bouncycastle.asn1.x500.style.RFC4519Style.l;
 
-//@RunWith(SpringRunner.class)
-//@SpringBootTest
+@RunWith(SpringRunner.class)
+@SpringBootTest
 public class UpMallApplicationTests {
 
     @Autowired
@@ -50,7 +50,7 @@ public class UpMallApplicationTests {
     @Autowired
     private GrouponActivitiesService grouponActivitiesService;
 
-   //@Test
+   @Test
     public void contextLoads() {
         //grouponOrderMasterService.doGrouponService(new Long(890),100);
         /*GrouponActivities grouponActivities = grouponActivitiesService.getById(9);
@@ -60,9 +60,50 @@ public class UpMallApplicationTests {
        /* SendMsgVo sendMsgVo =  grouponOrderMasterService.sendMsg(new Long(781));
         System.out.println();*/
         /*doRebateBalance(new BigDecimal(5),3,163);*/
-        //回调 改变订单状态
+        //回调
+       refundToBalance();
     }
 
 
+    /**
+     * 余额退款，（立即退）
+     */
+    public void refundToBalance(){
+        LambdaQueryWrapper<OrderRefund> orderRefundQuery = new LambdaQueryWrapper<>();
+        orderRefundQuery.isNull(OrderRefund::getRefundTime);
+        List<OrderRefund> refundList = orderRefundService.list(orderRefundQuery);
+        List<OrderRefund> updateBatch = new ArrayList<>();
+        List<GrouponOrderMaster> grouponOrderMasterList = new ArrayList<>();
+        for(OrderRefund item : refundList){
+            OrderRefund updateRefund = new OrderRefund();
+            GrouponOrderMaster grouponOrderMaster = new GrouponOrderMaster();
+            updateRefund.setId(item.getId());
+            OrderMaster orderMaster = orderMasterService.getById(item.getOrderId());
 
+            if(orderMaster != null && orderMaster.getPayWay() - 3 == 0){
+                //微信
+                grouponOrderMaster.setMemberId(orderMaster.getMemberId());
+                grouponOrderMaster.setOrderId(orderMaster.getId().intValue());
+
+                updateRefund.setOutRefundNo(CharUtil.getCode(orderMaster.getMemberId(),3));
+                updateRefund.setOutTradeNo(orderMaster.getSystemOrderNo());
+                updateRefund.setTransactionId(orderMaster.getTransactionOrderNo());
+                if(item.getTotalFee() == null || item.getTotalFee() - 0 == 0){
+                    updateRefund.setTotalFee(Integer.valueOf(MoneyUtil.moneyYuan2FenStr(orderMaster.getPracticalPay())));
+                    updateRefund.setRefundFee(Integer.valueOf(MoneyUtil.moneyYuan2FenStr(orderMaster.getPracticalPay())));
+                    grouponOrderMaster.setBackPrize(MoneyUtil.moneyFen2Yuan(updateRefund.getTotalFee().toString()));
+                }else{
+                    grouponOrderMaster.setBackPrize(MoneyUtil.moneyFen2Yuan(item.getTotalFee().toString()));
+                }
+                updateRefund.setRefundTime(new Date());
+
+                grouponOrderMasterList.add(grouponOrderMaster);
+                updateBatch.add(updateRefund);
+            }
+        }
+        boolean result = HttpClientUtil.deductUserBalanceBatch(false,grouponOrderMasterList);
+        if(result){
+            orderRefundService.updateBatchById(updateBatch);
+        }
+    }
 }

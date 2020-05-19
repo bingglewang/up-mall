@@ -641,11 +641,11 @@ public class OrderMasterController {
         for(BalanceRefundVo grouponOrderMaster : allOrderMaster){
             OrderMaster order = baseService.getById(grouponOrderMaster.getOrderId());
             if (order == null) {
-                return result.error("订单不存在 sn=" + order.getSystemOrderNo());
+                return result.error("订单不存在 sn=");
             }
 
             // 检查这个订单是否已经处理过
-            if (order.getOrderStatus() - SystemConfig.ORDER_STATUS_REFUNDED != 0) {
+            if (order.getOrderStatus() - SystemConfig.ORDER_STATUS_REFUNDED == 0) {
                 return result.success("订单已经处理成功!");
             }
 

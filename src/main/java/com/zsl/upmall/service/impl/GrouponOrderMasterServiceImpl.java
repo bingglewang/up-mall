@@ -383,6 +383,21 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
             LambdaQueryWrapper<GrouponOrderMaster> failOrderMaster = new LambdaQueryWrapper<>();
             failOrderMaster.eq(GrouponOrderMaster::getGrouponOrderId, joinGroupId);
             List<GrouponOrderMaster> allFailMasters = grouponOrderMasterService.list(failOrderMaster);
+
+            List<GrouponOrderMaster> updateList = new ArrayList<>();
+            for(GrouponOrderMaster grouponOrderMaster : allFailMasters){
+                GrouponOrderMaster grouponOrderMasterUpdate = new GrouponOrderMaster();
+                grouponOrderMasterUpdate.setId(grouponOrderMaster.getId());
+                grouponOrderMasterUpdate.setGrouponStatus(GroupOrderStatusEnum.FAILED.getCode());
+                OrderMaster orderDetail = orderMasterService.getById(grouponOrderMaster.getOrderId());
+                if(orderDetail != null){
+                    grouponOrderMasterUpdate.setGrouponResult("返回本金 + " + orderDetail.getPracticalPay()+"元");
+                }
+                updateList.add(grouponOrderMasterUpdate);
+            }
+            boolean upresult = grouponOrderMasterService.updateBatchById(updateList);
+            logger.info("团【【【【"+joinGroupId+"】】】】更新结果::"+upresult);
+
             //调用退款 接口 (微信退款和余额退款)
             List<OrderRefund> refundList = allFailMasters.stream()
                     .map(i -> {
@@ -484,9 +499,9 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
                     updateItem.setWinVoucher(win_voucher_str.toString().substring(0,win_voucher_str.toString().length() -1));
                 } else {
                     updateItem.setGrouponStatus(GroupOrderStatusEnum.FAILED.getCode());
-                    updateItem.setBackPrize(backPrize);
-                    item.setBackPrize(backPrize);
                 }
+                updateItem.setBackPrize(backPrize);
+                item.setBackPrize(backPrize);
                 updateOrderMasterList.add(updateItem);
 
                 // 拆单
@@ -519,7 +534,7 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
                     .filter(item -> item.getBackPrize() != null && item.getBackPrize().compareTo(new BigDecimal(0)) > 0)
                     .collect(Collectors.toList());
             //调用返利接口 (发放余额)
-            boolean balanceRebateResult =  HttpClientUtil.deductUserBalanceBatch(true,updateOrderMasterList);
+            boolean balanceRebateResult =  HttpClientUtil.deductUserBalanceBatch(true,updateOrderMasterList,2);
             //调用退款 接口 (微信退款和余额退款)
             List<OrderRefund> refundList = updateOrderMasterList.stream()
                     .filter(item -> !splitOrderIds.contains(item.getOrderId()))
@@ -704,6 +719,7 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
      * 余额退款，（立即退）
      */
     public void refundToBalance(){
+        logger.info("余额退款开始：");
         LambdaQueryWrapper<OrderRefund> orderRefundQuery = new LambdaQueryWrapper<>();
         orderRefundQuery.isNull(OrderRefund::getRefundTime);
         List<OrderRefund> refundList = orderRefundService.list(orderRefundQuery);
@@ -726,14 +742,18 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
                 if(item.getTotalFee() == null || item.getTotalFee() - 0 == 0){
                     updateRefund.setTotalFee(Integer.valueOf(MoneyUtil.moneyYuan2FenStr(orderMaster.getPracticalPay())));
                     updateRefund.setRefundFee(Integer.valueOf(MoneyUtil.moneyYuan2FenStr(orderMaster.getPracticalPay())));
+                    grouponOrderMaster.setBackPrize(MoneyUtil.moneyFen2Yuan(updateRefund.getTotalFee().toString()));
+                }else{
+                    grouponOrderMaster.setBackPrize(MoneyUtil.moneyFen2Yuan(item.getTotalFee().toString()));
                 }
                 updateRefund.setRefundTime(new Date());
-                grouponOrderMaster.setBackPrize(MoneyUtil.moneyFen2Yuan(updateRefund.getTotalFee().toString()));
+
                 grouponOrderMasterList.add(grouponOrderMaster);
                 updateBatch.add(updateRefund);
             }
         }
-        boolean result = HttpClientUtil.deductUserBalanceBatch(false,grouponOrderMasterList);
+        boolean result = HttpClientUtil.deductUserBalanceBatch(false,grouponOrderMasterList,3);
+        logger.info("余额退款结果："+result);
         if(result){
             orderRefundService.updateBatchById(updateBatch);
         }

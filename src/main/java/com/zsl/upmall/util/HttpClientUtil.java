@@ -285,23 +285,26 @@ public class HttpClientUtil {
      * @param allOrderMaster 发放列表
      * @return
      */
-    public static boolean deductUserBalanceBatch(Boolean onlyDeduct, List<GrouponOrderMaster> allOrderMaster){
+    public static boolean deductUserBalanceBatch(Boolean onlyDeduct, List<GrouponOrderMaster> allOrderMaster,Integer type){
         logger.info("余额奖励金发放列表：{{{{{"+allOrderMaster+"}}}}}}}");
         JSONObject params = new JSONObject();
         List<BalacneRebateVo> balacneRebateVos = allOrderMaster.stream()
                 .map(item -> BalacneRebateVo.builder().userId(item.getMemberId()).balance(item.getBackPrize().negate()).build())
                 .collect(Collectors.toList());
         params.put("balanceBatch",balacneRebateVos);
+        params.put("orderType",type);
         String result = doPostJson(SystemConfig.DEDUCT_USER_BALANCE_BATCH,params.toJSONString(),null);
         logger.info("余额奖励金发放结果：【【【【【"+result+"】】】】】");
         boolean isSuccess = false;
         try {
             if(StringUtils.isNotBlank(result)){
                 AddressResultVo addressResultVo = JSON.parseObject(result,AddressResultVo.class);
+                logger.info("进来余额回调addressResultVo:"+addressResultVo);
                 if(addressResultVo != null && "100200".equals(addressResultVo.getCode())){
                     isSuccess = true;
                     // 余额支付回调
                     if(!onlyDeduct){
+                        logger.info("进来余额回调");
                         doBalancePayNotify(allOrderMaster);
                     }
                 }
