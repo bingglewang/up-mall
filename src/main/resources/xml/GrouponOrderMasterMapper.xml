@@ -47,6 +47,7 @@
 				LEFT JOIN groupon_activities ga on ga.id = go.groupon_activities_id
 				WHERE
 					g.groupon_order_id =  #{grouponOrderId}
+				ORDER BY o.pay_time DESC
 	</select>
 
 

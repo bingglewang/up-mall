@@ -341,7 +341,7 @@ public class OrderMasterController {
                 orderDetailService.save(orderDetail);
             }
 
-            int addSubStock = baseService.addAndSubSkuStock(skuAddStockVos, true,false,true);
+            int addSubStock = baseService.addAndSubSkuStock(skuAddStockVos, false,false,true);
             if (addSubStock - 0 == 0) {
                 OrderMaster updateHidden = new OrderMaster();
                 updateHidden.setId(order.getId());

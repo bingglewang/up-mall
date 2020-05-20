@@ -134,6 +134,12 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
         wxMaSubscribeData3.setValue(totalFee);
         wxMaSubscribeData.add(wxMaSubscribeData3);
 
+        // 第二个内容：
+        WxMaSubscribeData wxMaSubscribeData4 = new WxMaSubscribeData();
+        wxMaSubscribeData4.setName("thing9");
+        wxMaSubscribeData4.setValue("您的拼团订单已“拼中”");
+        wxMaSubscribeData.add(wxMaSubscribeData4);
+
         //把集合给大的data
         subscribeMessage.setData(wxMaSubscribeData);
 
@@ -391,7 +397,7 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
                 grouponOrderMasterUpdate.setGrouponStatus(GroupOrderStatusEnum.FAILED.getCode());
                 OrderMaster orderDetail = orderMasterService.getById(grouponOrderMaster.getOrderId());
                 if(orderDetail != null){
-                    grouponOrderMasterUpdate.setGrouponResult("返回本金 + " + orderDetail.getPracticalPay()+"元");
+                    grouponOrderMasterUpdate.setGrouponResult("返回本金" + orderDetail.getPracticalPay()+"");
                 }
                 updateList.add(grouponOrderMasterUpdate);
             }
@@ -509,16 +515,16 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
                     BigDecimal refundPrice = splitOrder(item.getOrderId(), not_win_count);
                     splitOrderIds.add(item.getOrderId());
                     if(refundPrice != null){
-                        updateItem.setGrouponResult("返回本金+奖励金" + backPrize.add(refundPrice) + "元");
+                        updateItem.setGrouponResult("返回本金"+refundPrice+" + 奖励金" + backPrize + "");
                     }else{
-                        updateItem.setGrouponResult("返回奖励金" + backPrize+ "元");
+                        updateItem.setGrouponResult("返回奖励金" + backPrize+ "");
                     }
                 }else if(backPrize.compareTo(new BigDecimal(0)) > 0){
                     OrderMaster orderMaster = orderMasterService.getById(item.getOrderId());
                     if(orderMaster == null){
                         updateItem.setGrouponResult("查找不到原订单");
                     }else{
-                        updateItem.setGrouponResult("返回本金+奖励金" + backPrize.add(orderMaster.getPracticalPay()) + "元");
+                        updateItem.setGrouponResult("返回本金"+orderMaster.getPracticalPay()+" + 奖励金" + backPrize + "");
                     }
 
                 }
