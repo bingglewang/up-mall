@@ -388,6 +388,7 @@ public class HttpClientUtil {
                 UnifiedOrderVo unifiedOrderVo = JSON.parseObject(result,UnifiedOrderVo.class);
                 if(unifiedOrderVo != null && unifiedOrderVo.getStatusCode() - 200 == 0){
                     isSuccess = true;
+                    doWeixinBalanceNotify(orderRefund.getOutRefundNo(),orderRefund.getOutTradeNo());
                 }
             }
         }catch (Exception e){
@@ -395,6 +396,23 @@ public class HttpClientUtil {
             e.printStackTrace();
         }
         return isSuccess;
+    }
+
+    public static void doWeixinBalanceNotify(String outRefundNo,String outTradeNo){
+        JSONObject refundParam = new JSONObject();
+        refundParam.put("out_refund_no",outRefundNo);
+        refundParam.put("out_trade_no",outTradeNo);
+        String result = doPostJson(SystemConfig.REFUND_NOTIFY_URL,refundParam.toJSONString(),null);
+        try {
+            if(StringUtils.isNotBlank(result)){
+                AddressResultVo addressResultVo = JSON.parseObject(result,AddressResultVo.class);
+                if(addressResultVo != null &&  "300200".equals(addressResultVo.getCode())){
+                    logger.info("订单【【【【"+outTradeNo+"】】】退款成功");
+                }
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
     }
 
     /**
