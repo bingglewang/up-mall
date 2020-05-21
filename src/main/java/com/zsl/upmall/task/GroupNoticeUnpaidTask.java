@@ -52,7 +52,13 @@ public class GroupNoticeUnpaidTask extends Task {
             //场景说明拼团成功通知
             List<MiniNoticeVo> miniNoticeVos = grouponOrderMasterService.getGroupNoticeList(this.joinGroupId,GroupOrderStatusEnum.SUCCESS.getCode());
             for(MiniNoticeVo miniNoticeVo : miniNoticeVos){
-                grouponOrderMasterService.push2(miniNoticeVo.getOpenId(),"pages/collageOrderList/collageOrderList",miniNoticeVo.getGoodsName()+miniNoticeVo.getGoodsSpc(),miniNoticeVo.getGoodsPrice()+"","拼团成功");
+                String notice = "";
+                if(miniNoticeVo.getActivityMode() - 0 == 0){
+                    notice = "拼团成功";
+                }else if(miniNoticeVo.getActivityMode() - 1 == 0){
+                    notice = "开团有效期内，成团但没拼中，退款并获得随机奖励金";
+                }
+                grouponOrderMasterService.push2(miniNoticeVo.getOpenId(),"pages/collageOrderList/collageOrderList",miniNoticeVo.getGoodsName()+miniNoticeVo.getGoodsSpc(),miniNoticeVo.getGoodsPrice()+"",notice);
             }
         }
         logger.info("拼团结果通知开始---【【【" + this.joinGroupId+"】】】");

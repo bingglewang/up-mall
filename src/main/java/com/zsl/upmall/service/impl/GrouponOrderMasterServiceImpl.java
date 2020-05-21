@@ -430,6 +430,9 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
         //去掉 延时队列
         taskService.removeTask(new GrouponOrderUnpaidTask(joinGroupId,activityDetail));
 
+        //成功通知 todo
+        taskService.addTask(new GroupNoticeUnpaidTask(joinGroupId,60,GroupOrderStatusEnum.SUCCESS.getCode(),2));
+
         //开始结算 修改子订单状态
         if (activityDetail.getMode() - 0 == 0) {
             LambdaQueryWrapper<GrouponOrderMaster> updateGroupOrderMasterQuery = new LambdaQueryWrapper<>();
@@ -449,8 +452,6 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
                 updateList.add(grouponOrderMasterUpdate);
             }
             grouponOrderMasterService.updateBatchById(updateList);
-            //成功通知 todo
-            taskService.addTask(new GroupNoticeUnpaidTask(joinGroupId,60,GroupOrderStatusEnum.SUCCESS.getCode(),2));
         } else if (activityDetail.getMode() - 1 == 0) {
             final int final_joinGroupId = joinGroupId;
             // 获得 抽奖凭证(列表)（副本弹出来

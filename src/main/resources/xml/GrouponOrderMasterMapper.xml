@@ -52,6 +52,7 @@
 
 
 	<resultMap id="GroupNoticeListResultMap" type="com.zsl.upmall.vo.MiniNoticeVo">
+		<result column="activityMode" property="activityMode" jdbcType="INTEGER" />
 		<result column="orderId" property="orderId" jdbcType="INTEGER" />
 		<result column="orderSn" property="orderSn" jdbcType="VARCHAR" />
 		<result column="totalFee" property="totalFee" jdbcType="DECIMAL"/>
@@ -65,6 +66,7 @@
 
 	<select id="getGroupNoticeList" resultMap="GroupNoticeListResultMap">
 		SELECT
+			ga.`mode` activityMode,
 			om.id orderId,
 			om.system_order_no orderSn,
 			om.practical_pay totalFee,
@@ -78,6 +80,8 @@
 		LEFT JOIN order_master om on om.id = gom.order_id
 		LEFT JOIN order_detail od on od.order_id = om.id
 		LEFT JOIN user_member um on um.id = gom.member_id
+		LEFT JOIN groupon_order go on go.id = gom.groupon_order_id
+		LEFT JOIN groupon_activities ga on ga.id = go.groupon_activities_id
 		WHERE
 			gom.groupon_order_id = #{grouponOrderId}
 		and gom.groupon_status = #{grouponStatus}
