@@ -92,6 +92,9 @@ public class OrderMasterController {
     private GrouponOrderMasterService grouponOrderMasterService;
 
     @Autowired
+    private GrouponActivitiesService grouponActivitiesService;
+
+    @Autowired
     private GrouponOrderService grouponOrderService;
 
     protected JsonResult result = new JsonResult();
@@ -174,9 +177,28 @@ public class OrderMasterController {
 
         // 根据 是否拼团，拼团是否过期
         if(orderInfo.getGrouponActivityId() != null && orderInfo.getGrouponActivityId() - 0 != 0 && orderInfo.getJoinGroupId() - 0 != 0){
+            LocalDateTime nowDate = LocalDateTime.now();
             GrouponOrder grouponOrder = grouponOrderService.getById(orderInfo.getJoinGroupId());
-            if(grouponOrder == null || grouponOrder.getSettlementTime() == null){
-                return result.error("拼团活动结束");
+            if(grouponOrder != null ){
+                LocalDateTime endTime = grouponOrder.getEndTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+                if(grouponOrder.getSettlementTime() != null || endTime.isBefore(nowDate)){
+                    return result.error("拼团活动结束");
+                }
+            }else{
+                return result.error("拼团不存在");
+            }
+            //获取拼团活动信息
+            GrouponActivities activityDetail = grouponActivitiesService.getById(orderInfo.getGrouponActivityId());
+            if (activityDetail == null) {
+                logger.info("下单拼团活动【【【" + orderInfo.getGrouponActivityId() + "】】】不存在");
+                return result.error("拼团活动不存在");
+            }
+
+            //判断活动是否过期
+            LocalDateTime end = activityDetail.getEndTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+            if (end.isBefore(nowDate)) {
+                logger.info("下单活动过期：【【【" + orderInfo.getGrouponActivityId() + "】】】");
+                return result.error("活动过期");
             }
         }
 
