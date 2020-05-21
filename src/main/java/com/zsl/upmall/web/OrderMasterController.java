@@ -91,6 +91,9 @@ public class OrderMasterController {
     @Autowired
     private GrouponOrderMasterService grouponOrderMasterService;
 
+    @Autowired
+    private GrouponOrderService grouponOrderService;
+
     protected JsonResult result = new JsonResult();
 
 
@@ -167,6 +170,14 @@ public class OrderMasterController {
         Integer userId = requestContext.getUserId();
         if (userId == null) {
             return result.error("用户信息错误");
+        }
+
+        // 根据 是否拼团，拼团是否过期
+        if(orderInfo.getGrouponActivityId() != null && orderInfo.getGrouponActivityId() - 0 != 0 && orderInfo.getJoinGroupId() - 0 != 0){
+            GrouponOrder grouponOrder = grouponOrderService.getById(orderInfo.getJoinGroupId());
+            if(grouponOrder == null || grouponOrder.getSettlementTime() == null){
+                return result.error("拼团活动结束");
+            }
         }
 
         //创建订单

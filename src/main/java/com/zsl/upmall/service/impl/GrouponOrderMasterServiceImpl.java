@@ -620,13 +620,13 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
         winOrderDetail.setGoodsCount(orderDetail.getGoodsCount() - notWinCount);
         winOrderDetail.setGoodsAmount(orderDetail.getGoodsAmount().subtract(not_win_price));
         winOrderDetail.setPracticalClearing(orderDetail.getPracticalClearing().subtract(not_win_price));
-        winOrderDetail.setClearingInfo("中奖商品");
+        winOrderDetail.setClearingInfo("1");
         orderDetailService.updateById(winOrderDetail);
         notWinOrderDetail.setPracticalClearing(not_win_price.add(notWinOrderDetail.getGoodsCarriage()));
         notWinOrderDetail.setGoodsAmount(not_win_price);
         notWinOrderDetail.setGoodsCount(notWinCount);
         notWinOrderDetail.setActualCount(notWinCount);
-        notWinOrderDetail.setClearingInfo("未中奖商品");
+        notWinOrderDetail.setClearingInfo("0");
         orderDetailService.save(notWinOrderDetail);
         OrderRefund orderRefund = new OrderRefund();
         orderRefund.setCreateTime(new Date());
