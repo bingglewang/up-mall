@@ -118,13 +118,13 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
         ArrayList<WxMaSubscribeData> wxMaSubscribeData = new ArrayList<>();
         //第一个内容：
         WxMaSubscribeData wxMaSubscribeData1 = new WxMaSubscribeData();
-        wxMaSubscribeData1.setName("thing1");
+        wxMaSubscribeData1.setName("thing2");
         wxMaSubscribeData1.setValue(goodName);
         wxMaSubscribeData.add(wxMaSubscribeData1);
 
         // 第二个内容：
         WxMaSubscribeData wxMaSubscribeData2 = new WxMaSubscribeData();
-        wxMaSubscribeData2.setName("character_string2");
+        wxMaSubscribeData2.setName("character_string6");
         wxMaSubscribeData2.setValue(orderSn);
         wxMaSubscribeData.add(wxMaSubscribeData2);
 

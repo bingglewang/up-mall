@@ -52,5 +52,6 @@ public class UpMallApplicationTests {
 
    @Test
     public void contextLoads() {
+       grouponOrderMasterService.push("okY-q5f-9e8q89u_wR_watuAaTYE","index","ddd","ddds","12.2");
     }
 }
