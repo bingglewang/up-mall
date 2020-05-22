@@ -43,6 +43,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -315,7 +316,10 @@ public class GrouponOrderMasterServiceImpl extends ServiceImpl<GrouponOrderMaste
             }
             joinGroupId = grouponOrder.getId();
             //开启延时队列 定时
-            taskService.addTask(new GrouponOrderUnpaidTask(joinGroupId,activityDetail));
+            LocalDateTime endTimeLocal = endTime.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+            LocalDateTime createTimeLocal = createTime.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+            long delay = ChronoUnit.MILLIS.between(createTimeLocal, endTimeLocal);
+            taskService.addTask(new GrouponOrderUnpaidTask(joinGroupId,activityDetail,delay));
 
             doRedisGroupInfo(true,orderId,activityDetail.getMode(),grouponActivityId,activityDetail.getGroupCount(),joinGroupId,userId);
             //生成凭证放redis

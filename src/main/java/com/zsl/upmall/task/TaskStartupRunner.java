@@ -66,21 +66,20 @@ public class TaskStartupRunner implements ApplicationRunner {
         orderLambdaQueryWrapper.isNull(GrouponOrder::getSettlementTime);
         List<GrouponOrder> grouponOrders = grouponOrderService.list(orderLambdaQueryWrapper);
         for(GrouponOrder grouponOrder : grouponOrders){
-            LocalDateTime add = grouponOrder.getCreateTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+            LocalDateTime end = grouponOrder.getEndTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
             LocalDateTime now = LocalDateTime.now();
             GrouponActivities activitiesDetail = grouponActivitiesService.getById(grouponOrder.getGrouponActivitiesId());
             if(activitiesDetail == null){
                 continue;
             }
-            LocalDateTime expire =  add.plusMinutes(activitiesDetail.getExpireHour() * 60);
-            if(expire.isBefore(now)) {
+            if(end.isBefore(now)) {
                 // 已经过期，则加入延迟队列
-                taskService.addTask(new GrouponOrderUnpaidTask(grouponOrder.getId(), activitiesDetail));
+                taskService.addTask(new GrouponOrderUnpaidTask(grouponOrder.getId(), activitiesDetail,0));
                 logger.info("[[团队id："+grouponOrder.getId()+"]],团队订单号：{{"+grouponOrder.getGrouponOrderNo()+"}}加入队列成功,延迟时间:===>"+0);
             }
             else{
                 // 还没过期，则加入延迟队列
-                long delay = ChronoUnit.MILLIS.between(now, expire);
+                long delay = ChronoUnit.MILLIS.between(now, end);
                 taskService.addTask(new GrouponOrderUnpaidTask(grouponOrder.getId(), activitiesDetail, delay));
                 logger.info("[[团队id："+grouponOrder.getId()+"]],团队订单号：{{"+grouponOrder.getGrouponOrderNo()+"}}加入队列成功,延迟时间:===>"+delay);
             }
