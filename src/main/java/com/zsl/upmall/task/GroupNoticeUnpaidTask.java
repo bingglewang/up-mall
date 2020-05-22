@@ -51,12 +51,14 @@ public class GroupNoticeUnpaidTask extends Task {
         }else if(this.type - 2 == 0){
             //场景说明拼团成功通知
             List<MiniNoticeVo> miniNoticeVos = grouponOrderMasterService.getGroupNoticeList(this.joinGroupId,GroupOrderStatusEnum.SUCCESS.getCode());
+            List<MiniNoticeVo> miniNoticeVosFail = grouponOrderMasterService.getGroupNoticeList(this.joinGroupId,GroupOrderStatusEnum.FAILED.getCode());
+            miniNoticeVos.addAll(miniNoticeVosFail);
             for(MiniNoticeVo miniNoticeVo : miniNoticeVos){
                 String notice = "";
                 if(miniNoticeVo.getActivityMode() - 0 == 0){
                     notice = "拼团成功";
                 }else if(miniNoticeVo.getActivityMode() - 1 == 0){
-                    notice = "开团有效期内，成团但没拼中，退款并获得随机奖励金";
+                    notice = "成团但没拼中，退款并获得随机奖励金";
                 }
                 grouponOrderMasterService.push2(miniNoticeVo.getOpenId(),"pages/collageOrderList/collageOrderList",miniNoticeVo.getGoodsName()+miniNoticeVo.getGoodsSpc(),miniNoticeVo.getGoodsPrice()+"",notice);
             }

@@ -550,11 +550,23 @@ public class OrderMasterController {
             throw new RuntimeException("确认收货失败");
         }
 
+        //返利
         RequestContext requestContext = RequestContextMgr.getLocalContext();
+        memberRebate(requestContext.getToken(),orderMaster);
+
+        return result.success("确认收货成功");
+    }
+
+
+    /**
+     * 会员返利
+     * @param orderMaster
+     */
+    public void memberRebate(String token,OrderMaster orderMaster){
         Integer productCount = baseService.getTotalProductCount(orderMaster.getId().intValue());
         //会员邀请及普通消费返利
         if(StringUtils.isBlank(orderMaster.getComboLevel())){
-            InviteRebateVo inviteRebateVo = HttpClientUtil.inviteRebate(requestContext.getUserId(), orderMaster.getSystemOrderNo(), requestContext.getToken(),productCount);
+            InviteRebateVo inviteRebateVo = HttpClientUtil.inviteRebate(orderMaster.getMemberId(), orderMaster.getSystemOrderNo(), token,productCount);
             logger.info("会员邀请及普通消费返利【【【【" + orderMaster.getSystemOrderNo() + "】】】】,操作结束" + "【【【【" + inviteRebateVo + "】】】");
         }
 
@@ -571,10 +583,8 @@ public class OrderMasterController {
             jsonObject.put("time", total.toString());
             redisService.set(prefix_key, jsonObject.toJSONString());
         }
-        logger.info("确认收货成功【【【【" + orderMaster.getSystemOrderNo() + "】】】】,积分操作结束" + "【【【【" + prefix_key + "】】】");
-        return result.success("确认收货成功");
+        logger.info("【【【【" + orderMaster.getSystemOrderNo() + "】】】】,积分操作结束" + "【【【【" + prefix_key + "】】】");
     }
-
 
     /**
      * 取消订单
@@ -710,7 +720,7 @@ public class OrderMasterController {
      * @return 操作结果
      */
     @PostMapping("pay-notify")
-    public Object payNotify(@RequestBody PayNotifyVo payNotifyVo) {
+    public Object payNotify(@RequestBody PayNotifyVo payNotifyVo,String token) {
         logger.info("回调结果===>" + payNotifyVo);
         if (!"success".equals(payNotifyVo.getResult())) {
             return result.error("支付失败");

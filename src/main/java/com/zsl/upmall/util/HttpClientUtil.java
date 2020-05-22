@@ -388,7 +388,7 @@ public class HttpClientUtil {
                 UnifiedOrderVo unifiedOrderVo = JSON.parseObject(result,UnifiedOrderVo.class);
                 if(unifiedOrderVo != null && unifiedOrderVo.getStatusCode() - 200 == 0){
                     isSuccess = true;
-                    doWeixinBalanceNotify(orderRefund.getOutRefundNo(),orderRefund.getOutTradeNo());
+                    //doWeixinBalanceNotify(orderRefund.getOutRefundNo(),orderRefund.getOutTradeNo());
                 }
             }
         }catch (Exception e){
@@ -480,11 +480,13 @@ public class HttpClientUtil {
      * @return
      */
     public static InviteRebateVo inviteRebate(Integer memberId,String orderNo,String token,Integer productCount){
+       logger.info("会员普通消费返利：订单号【【【"+orderNo+"】】】，"+"会员：【"+memberId+"】，token：【"+token+"】，数量：【"+productCount+"】");
         JSONObject params = new JSONObject();
         params.put("memberId",memberId);
         params.put("orderNo",orderNo);
         params.put("productCount",productCount);
         String result = doPostJson(SystemConfig.MEMBER_INVITEREBATE_URL,params.toJSONString(),token);
+        logger.info("返利结果：：：》》》》"+result);
         InviteRebateVo inviteResult = null;
         try {
             if(StringUtils.isNotBlank(result)){

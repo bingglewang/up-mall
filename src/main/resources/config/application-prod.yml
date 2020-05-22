@@ -33,3 +33,19 @@ spring:
   jackson:
     serialization:
       write-dates-as-timestamps: true
+
+#微信配置
+upmall:
+  wx:
+    app-id: wx8820721597cb9b10
+    app-secret: 32f9e34328ef46d86b3f2aa9e30b4772
+    template:
+     # 拼团成功通知
+     - name: success
+       templateId: qJB77iqR6URfon__3FqWqi0BtGkJ38lmas3FOeE9rgk
+     # 拼团失败通知
+     - name: failed
+       templateId: vy8Vx0T3m8HfYivwa48DU7uoKR5o7nyEwua9JZUzSPo
+     # 抽奖结果通知
+     - name: draw
+       templateId: m38RGiDBNVl0BMz_I-fkm0ovAxB_2VFljssGxsCSMG8
