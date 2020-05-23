@@ -52,6 +52,18 @@ public class UpMallApplicationTests {
 
    @Test
     public void contextLoads() {
-       grouponOrderMasterService.push("okY-q5f-9e8q89u_wR_watuAaTYE","index","ddd","ddds","12.2");
+       LambdaQueryWrapper<OrderRefund> orderRefundQuery = new LambdaQueryWrapper<>();
+       orderRefundQuery.isNull(OrderRefund::getRefundTime);
+       List<OrderRefund> refundList = orderRefundService.list(orderRefundQuery);
+       List<OrderRefund> updateBatch = new ArrayList<>();
+       for(OrderRefund item : refundList) {
+           //判断时间 (测试先放开)
+            LocalDateTime add = item.getCreateTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+            LocalDateTime now = DateUtil.getCurrent14().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+            LocalDateTime expire =  now.plusDays(1);
+            if(add.isAfter(now) && add.isBefore(expire)){
+                continue;
+            }
+       }
     }
 }

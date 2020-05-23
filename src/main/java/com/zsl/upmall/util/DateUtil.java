@@ -17,12 +17,24 @@ public class DateUtil {
         return sdf.format(date);
     }
 
-    public static Date getCurrent14(){
+    public static Date getCurrentStart(){
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String currentTime_2  = DateUtil.DateToString(new Date(),"yyyy-MM-dd");
         Date date = null;
         try {
-            date = formatter.parse(currentTime_2 + " 14:00:00");
+            date = formatter.parse(currentTime_2 + " 00:00:00");
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        return date;
+    }
+
+    public static Date getCurrentEnd(){
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String currentTime_2  = DateUtil.DateToString(new Date(),"yyyy-MM-dd");
+        Date date = null;
+        try {
+            date = formatter.parse(currentTime_2 + " 23:59:59");
         } catch (ParseException e) {
             e.printStackTrace();
         }

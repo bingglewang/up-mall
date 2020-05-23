@@ -37,8 +37,8 @@ public class FissionWantedTask {
     @Autowired
     private OrderMasterService orderMasterService;
 
-    @Scheduled(cron="0 0 14 * * ?")  //每天下午两点
-    //@Scheduled(cron="0 0/5 * * * ?")  //五分钟一次
+    //@Scheduled(cron="0 0 14 * * ?")  //每天下午两点
+    @Scheduled(cron="0 0/5 * * * ?")  //五分钟一次
     public void taskEndFissionWanted(){
         logger.info("微信退款定时任务=======》开始");
         //每天凌晨00:15触发
@@ -49,9 +49,9 @@ public class FissionWantedTask {
         for(OrderRefund item : refundList){
             //判断时间 (测试先放开)
             LocalDateTime add = item.getCreateTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
-            LocalDateTime now = DateUtil.getCurrent14().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
-            LocalDateTime expire =  now.plusDays(1);
-            if(add.isBefore(expire)){
+            LocalDateTime start = DateUtil.getCurrentStart().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+            LocalDateTime end =  DateUtil.getCurrentEnd().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+            if(add.isAfter(start) && add.isBefore(end)){
                 continue;
             }
 
