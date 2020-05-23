@@ -254,7 +254,7 @@ public class HttpClientUtil {
      * @param totalFeel
      * @return
      */
-    public static UnifiedOrderVo unifiedOrder(String ip, String openId, String body, String orderSn, String totalFeel){
+    public static UnifiedOrderVo unifiedOrder(String ip, String openId, String body, String orderSn, String totalFeel,String token){
         JSONObject params = new JSONObject();
         params.put("source",SystemConfig.SYSTEM_UNIQUE_CODE);
         params.put("trade_type","MINIAPP");
@@ -263,7 +263,7 @@ public class HttpClientUtil {
         params.put("out_trade_no",orderSn);
         params.put("total_fee",totalFeel);
         params.put("spbill_create_ip",ip);
-        params.put("business_notify_url",SystemConfig.BUSINESS_NOTIFY_URL);
+        params.put("business_notify_url",SystemConfig.BUSINESS_NOTIFY_URL + "?token=" + token);
         String result = doPostJson(SystemConfig.WEIXIN_UNION_RUL,params.toJSONString(),"");
         logger.info("微信统一下单结果：orderSn【【【"+orderSn+"】】】"+"=====》》{{{"+result+"}}}");
         UnifiedOrderVo unifiedResult = null;
@@ -446,7 +446,7 @@ public class HttpClientUtil {
         paramsNotify.put("transaction_id",orderSn);
         paramsNotify.put("out_trade_no",orderSn);
         paramsNotify.put("payWay","3");
-        String notifyResult = doPostJson(SystemConfig.BUSINESS_NOTIFY_URL,paramsNotify.toJSONString(),token);
+        String notifyResult = doPostJson(SystemConfig.BUSINESS_NOTIFY_URL  + "?token=" + token,paramsNotify.toJSONString(),token);
         logger.info("余额支付回调结果：orderSn【【【"+orderSn+"】】】"+"=====》》{{{"+notifyResult+"}}}");
     }
 

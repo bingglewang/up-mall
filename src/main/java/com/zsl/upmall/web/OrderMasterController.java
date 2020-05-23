@@ -401,7 +401,7 @@ public class OrderMasterController {
             } else {
                 totalFee = MoneyUtil.moneyYuan2FenStr(toPayOrder.getPracticalPay());
             }
-            UnifiedOrderVo unifiedOrderVo = HttpClientUtil.unifiedOrder(IpUtil.getRequestIp(request), orderInfo.getOpenid(), "up-mall商品支付", orderSn, totalFee);
+            UnifiedOrderVo unifiedOrderVo = HttpClientUtil.unifiedOrder(IpUtil.getRequestIp(request), orderInfo.getOpenid(), "up-mall商品支付", orderSn, totalFee,requestContext.getToken());
             logger.info("订单模块：{{" + orderSn + "}}的微信统一下单结果=====》》》" + unifiedOrderVo);
             if (unifiedOrderVo == null) {
                 return result.error("微信统一下单失败");
@@ -549,10 +549,6 @@ public class OrderMasterController {
         if (!baseService.updateById(updateStatus)) {
             throw new RuntimeException("确认收货失败");
         }
-
-        //返利
-        RequestContext requestContext = RequestContextMgr.getLocalContext();
-        memberRebate(requestContext.getToken(),orderMaster);
 
         return result.success("确认收货成功");
     }
@@ -780,6 +776,9 @@ public class OrderMasterController {
         if(order.getGrouponActivityId() != null && order.getGrouponActivityId() - 0 != 0){
             grouponOrderMasterService.doGrouponService(order.getId(),order.getMemberId());
         }
+
+        //返利
+        memberRebate(token,order);
 
         // 取消订单超时未支付任务
         taskService.removeTask(new OrderUnpaidTask(order.getId()));
