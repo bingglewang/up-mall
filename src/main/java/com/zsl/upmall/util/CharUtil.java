@@ -109,6 +109,19 @@ public class CharUtil {
         return list;
     }
 
+    /**
+     * 限定字符串长度，超过15个字符显示。。。
+     * @param str
+     * @return
+     */
+    public static String getString15Length(String str){
+        if(str.length() - 15 > 0){
+            return str.substring(0,15) + "...";
+        }else{
+            return str;
+        }
+    }
+
     public static void main(String[] args) {
        // System.out.println(generateGrouponCode());
        /* LocalDateTime nowDate = LocalDateTime.now();
@@ -117,6 +130,8 @@ public class CharUtil {
         Date  endTime = Date.from( endDate.atZone( ZoneId.systemDefault()).toInstant());
         System.out.println("开始时间:"+DateUtil.DateToString(createTime,"yyyy-MM-dd HH:mm:ss"));
         System.out.println("结束时间:"+DateUtil.DateToString(endTime,"yyyy-MM-dd HH:mm:ss"));*/
-        System.out.println(generateJoinGroupCode(9));
+        /*System.out.println(generateJoinGroupCode(9));*/
+        String str = "时间节点34你的号我是你把";
+        System.out.println("阶段："+getString15Length(str));
     }
 }
