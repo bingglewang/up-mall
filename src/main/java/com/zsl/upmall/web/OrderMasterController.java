@@ -775,10 +775,10 @@ public class OrderMasterController {
         // 根据 是否拼团，处理拼团业务
         if(order.getGrouponActivityId() != null && order.getGrouponActivityId() - 0 != 0){
             grouponOrderMasterService.doGrouponService(order.getId(),order.getMemberId());
+        }else{
+            //返利 (非拼团才返利)
+            memberRebate(token,order);
         }
-
-        //返利
-        memberRebate(token,order);
 
         // 取消订单超时未支付任务
         taskService.removeTask(new OrderUnpaidTask(order.getId()));
