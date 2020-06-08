@@ -167,6 +167,7 @@ public class OrderMasterController {
      */
     @PostMapping("/createOrder")
     public JsonResult createOrder(@RequestBody CreateOrderVo orderInfo, HttpServletRequest request) {
+        logger.info("下单参数:【【【"+ JSONObject.toJSONString(orderInfo));
         long startTime = System.currentTimeMillis();
         //获取用户 userId
         RequestContext requestContext = RequestContextMgr.getLocalContext();
@@ -234,8 +235,8 @@ public class OrderMasterController {
                 return result.error("参数错误");
             }
             // 收货地址
-            // AddressInfo addressInfo = HttpClientUtil.getAddressInfoById(orderInfo.getAddressId(),requestContext.getToken());
-            if (orderInfo.getAddressId() == null) {
+             AddressInfo addressInfo = addressService.addressInfo(new Long(orderInfo.getAddressId()));
+            if (addressInfo == null) {
                 return result.error("地址不存在");
             }
 
