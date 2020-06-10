@@ -1,17 +1,21 @@
 package com.zsl.upmall.web;
 
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.google.gson.stream.JsonReader;
 import com.zsl.upmall.aid.JsonResult;
 import com.zsl.upmall.aid.PageParam;
+import com.zsl.upmall.config.SynQueryDemo;
 import com.zsl.upmall.config.SystemConfig;
 import com.zsl.upmall.entity.OrderMaster;
 import com.zsl.upmall.entity.OrderRefund;
+import com.zsl.upmall.entity.Tracking;
 import com.zsl.upmall.service.GrouponOrderMasterService;
 import com.zsl.upmall.service.OrderMasterService;
 import com.zsl.upmall.service.OrderRefundService;
+import com.zsl.upmall.service.TrackingService;
 import com.zsl.upmall.task.GroupNoticeUnpaidTask;
 import com.zsl.upmall.task.TaskService;
 import com.zsl.upmall.util.CharUtil;
@@ -55,6 +59,9 @@ public class GrouponOrderMasterController {
     @Autowired
     private OrderMasterService orderMasterService;
 
+    @Autowired
+    private TrackingService trackingService;
+
     @GetMapping("list")
     public JsonResult list(PageParam param, Integer grouponOrderId){
         JsonResult result = new JsonResult();
@@ -82,6 +89,18 @@ public class GrouponOrderMasterController {
         taskEndFissionWanted();
         return result.success(null);
     }
+
+
+    @GetMapping("autoCom")
+    public  JsonResult autoCompany(String trackingSn){
+        JsonResult result = new JsonResult();
+        String companyCode = new SynQueryDemo().getAutoCompany(trackingSn);
+        Tracking tracking = trackingService.getOne(Wrappers.<Tracking>query()
+            .lambda().eq(Tracking::getTrackingCode,companyCode)
+        );
+        return result.success(tracking);
+    }
+
 
     @GetMapping("deliver")
     public JsonResult deliver(String orderSn,String trackingSn,Integer trackingCompanyId){

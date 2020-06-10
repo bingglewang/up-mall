@@ -17,6 +17,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .excludePathPatterns("/groupon/test/**")
                 .excludePathPatterns("/groupon/push/**")
                 .excludePathPatterns("/groupon/deliver/**")
+                .excludePathPatterns("/groupon/autoCom/**")
                 .excludePathPatterns("/groupon/shoudong/**")
                 .excludePathPatterns("/order/refund-notify/**")
                 .excludePathPatterns("/order/getTracking/**")
