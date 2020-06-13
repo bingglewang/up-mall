@@ -370,8 +370,8 @@ public class OrderMasterController {
                 orderDetail.setGoodsCarriage(orderInfo.getFreight());
                 orderDetail.setOrderId(orderId);
                 orderDetail.setSkuId(orderProductVo.getSkuId());
-                orderDetail.setGoodsAmount(orderInfo.getTotalAmount().subtract(orderInfo.getFreight()));
-                orderDetail.setPracticalClearing(orderInfo.getTotalAmount());
+                orderDetail.setGoodsAmount(orderProductVo.getProductPrice().multiply(new BigDecimal(orderProductVo.getProductCount())).subtract(orderInfo.getFreight()));
+                orderDetail.setPracticalClearing(orderProductVo.getProductPrice().multiply(new BigDecimal(orderProductVo.getProductCount())));
                 orderDetailService.save(orderDetail);
             }
 
@@ -386,6 +386,11 @@ public class OrderMasterController {
             // 订单地址处理
             JsonResult updateAddreResult = setDeleteAndAdd(orderInfo.getAddressId());
             logger.info("订单模块：{{" + order.getSystemOrderNo() + "}}的地址处理结果=====》》》" + updateAddreResult);
+        }
+
+        // 订单支付超期任务
+        if (StringUtils.isBlank(orderInfo.getOrderSn())) {
+            taskService.addTask(new OrderUnpaidTask(orderId));
         }
 
         Map<String, Object> map = new HashMap<>();
@@ -425,11 +430,6 @@ public class OrderMasterController {
 
         }else {
             return result.error("暂不支持该支付方式");
-        }
-
-        // 订单支付超期任务
-        if (StringUtils.isBlank(orderInfo.getOrderSn())) {
-            taskService.addTask(new OrderUnpaidTask(orderId));
         }
 
         logger.info("总下单模块执行时间=========【【【 " + (System.currentTimeMillis() - startTime) / 1000 + " 】】】秒");
