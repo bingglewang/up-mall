@@ -9,13 +9,8 @@ import com.zsl.upmall.aid.JsonResult;
 import com.zsl.upmall.aid.PageParam;
 import com.zsl.upmall.config.SynQueryDemo;
 import com.zsl.upmall.config.SystemConfig;
-import com.zsl.upmall.entity.OrderMaster;
-import com.zsl.upmall.entity.OrderRefund;
-import com.zsl.upmall.entity.Tracking;
-import com.zsl.upmall.service.GrouponOrderMasterService;
-import com.zsl.upmall.service.OrderMasterService;
-import com.zsl.upmall.service.OrderRefundService;
-import com.zsl.upmall.service.TrackingService;
+import com.zsl.upmall.entity.*;
+import com.zsl.upmall.service.*;
 import com.zsl.upmall.task.GroupNoticeUnpaidTask;
 import com.zsl.upmall.task.TaskService;
 import com.zsl.upmall.util.CharUtil;
@@ -51,6 +46,12 @@ public class GrouponOrderMasterController {
     private GrouponOrderMasterService grouponOrderMasterService;
 
     @Autowired
+    private GrouponOrderService grouponOrderService;
+
+    @Autowired
+    private GrouponActivitiesService activitiesService;
+
+    @Autowired
     private TaskService taskService;
 
     @Autowired
@@ -70,9 +71,17 @@ public class GrouponOrderMasterController {
     }
 
     @GetMapping("test")
-    public JsonResult test(Long orderId,Integer userId){
+    public JsonResult test(Integer joinGroupId){
         JsonResult result = new JsonResult();
-        grouponOrderMasterService.doGrouponService(orderId,userId);
+        GrouponOrder grouponOrder = grouponOrderService.getById(joinGroupId);
+        if(grouponOrder == null){
+            return result.error("拼团不存在");
+        }
+        GrouponActivities activities = activitiesService.getById(grouponOrder.getGrouponActivitiesId());
+        if(activities == null){
+            return result.error("拼团活动不存在");
+        }
+        grouponOrderMasterService.settlementGroup(joinGroupId,activities);
         return result.success(null);
     }
 
